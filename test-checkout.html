@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .cart-item { margin: 10px 0; padding: 10px; border: 1px solid #ddd; }
+        .addon { margin-left: 20px; color: #666; }
+        .total { margin-top: 20px; font-weight: bold; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <div id="error-message" class="error" style="display: none;"></div>
+    <div id="checkout-items"></div>
+    <div class="total">
+        Subtotal: $<span id="checkout-subtotal">0.00</span><br>
+        Tax: $<span id="checkout-tax">0.00</span><br>
+        Total: $<span id="checkout-total">0.00</span>
+    </div>
+    <script>
+        async function loadCart() {
+            const orderId = new URLSearchParams(window.location.search).get('order');
+            if (!orderId) {
+                showError('No order ID found');
+                return;
+            }
+
+            try {
+                console.log('Fetching order:', orderId);
+                const response = await fetch(`https://w2k19-web.lph.local/checkout_handler.php?order_id=${orderId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Cart data:', data);
+
+                if (data.status === 'success') {
+                    const itemsContainer = document.getElementById('checkout-items');
+                    itemsContainer.innerHTML = '';
+
+                    data.cart_items.forEach(item => {
+                        const itemElement = document.createElement('div');
+                        itemElement.className = 'cart-item';
+                        
+                        let html = `
+                            <div>${item.product_name} x ${item.quantity} at $${parseFloat(item.unit_price).toFixed(2)} each</div>
+                        `;
+
+                        if (item.addons && item.addons.length > 0) {
+                            html += '<div class="addons">';
+                            item.addons.forEach(addon => {
+                                html += `<div class="addon">+ ${addon.addon_name} ($${parseFloat(addon.price).toFixed(2)})</div>`;
+                            });
+                            html += '</div>';
+                        }
+
+                        html += `<div>Item Total: $${parseFloat(item.item_total).toFixed(2)}</div>`;
+                        itemElement.innerHTML = html;
+                        itemsContainer.appendChild(itemElement);
+                    });
+
+                    // Update totals
+                    document.getElementById('checkout-subtotal').textContent = data.subtotal.toFixed(2);
+                    document.getElementById('checkout-tax').textContent = data.tax.toFixed(2);
+                    document.getElementById('checkout-total').textContent = data.total.toFixed(2);
+                } else {
+                    throw new Error(data.message || 'Failed to load cart');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Error loading cart: ' + error.message);
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        document.addEventListener('DOMContentLoaded', loadCart);
+    </script>
+</body>
+</html>

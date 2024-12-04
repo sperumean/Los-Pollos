@@ -1,0 +1,148 @@
+Current database: walter
+
++----+--------------------------+-----------------+---------+---------------+
+| ID | Name                     | Category        | Price   | StockQuantity |
++----+--------------------------+-----------------+---------+---------------+
+|  1 | Methylamine              | Chemicals       | 5000.00 |            10 |
+|  2 | Hydrofluoric Acid        | Chemicals       | 2000.00 |             5 |
+|  3 | Phenylacetone            | Chemicals       | 7500.00 |             3 |
+|  4 | Acetone                  | Chemicals       |   50.00 |           100 |
+|  5 | Sulfuric Acid            | Chemicals       |  100.00 |            80 |
+|  6 | Portable Lab Burner      | Equipment       |  300.00 |            15 |
+|  7 | Glass Beakers Set        | Equipment       |  150.00 |            50 |
+|  8 | Distillation Kit         | Equipment       |  800.00 |             5 |
+|  9 | Pressure Cooker          | Equipment       |  120.00 |            20 |
+| 10 | Digital Scale            | Equipment       |  250.00 |            10 |
+| 11 | Hazmat Suit              | Protective Gear |  350.00 |            20 |
+| 12 | Respirator Mask          | Protective Gear |   80.00 |            30 |
+| 13 | Nitrile Gloves           | Protective Gear |   10.00 |           200 |
+| 14 | Safety Goggles           | Protective Gear |   15.00 |           100 |
+| 15 | Chemical Resistant Boots | Protective Gear |   70.00 |            25 |
++----+--------------------------+-----------------+---------+---------------+
+15 rows in set (0.079 sec)
+
+MariaDB [walter]> show tables;
++---------------------+
+| Tables_in_walter    |
++---------------------+
+| add_ons             |
+| contact_submissions |
+| customers           |
+| goods               |
+| order_item_addons   |
+| order_items         |
+| orders              |
+| products            |
+| suppliers           |
++---------------------+
+9 rows in set (0.001 sec)
+
+MariaDB [walter]> desc add_ons;
++------------+---------------+------+-----+---------+----------------+
+| Field      | Type          | Null | Key | Default | Extra          |
++------------+---------------+------+-----+---------+----------------+
+| addon_id   | int(11)       | NO   | PRI | NULL    | auto_increment |
+| name       | varchar(50)   | NO   |     | NULL    |                |
+| price      | decimal(10,2) | NO   |     | NULL    |                |
+| product_id | int(11)       | YES  | MUL | NULL    |                |
++------------+---------------+------+-----+---------+----------------+
+4 rows in set (0.127 sec)
+
+MariaDB [walter]> desc contact_submissions;
++-----------------+--------------+------+-----+---------------------+----------------+
+| Field           | Type         | Null | Key | Default             | Extra          |
++-----------------+--------------+------+-----+---------------------+----------------+
+| submission_id   | int(11)      | NO   | PRI | NULL                | auto_increment |
+| first_name      | varchar(50)  | NO   |     | NULL                |                |
+| last_name       | varchar(50)  | NO   |     | NULL                |                |
+| email           | varchar(100) | NO   |     | NULL                |                |
+| service         | varchar(50)  | NO   |     | NULL                |                |
+| country         | varchar(50)  | NO   |     | NULL                |                |
+| subject         | mediumtext   | YES  |     | NULL                |                |
+| submission_date | timestamp    | YES  |     | current_timestamp() |                |
++-----------------+--------------+------+-----+---------------------+----------------+
+8 rows in set (0.021 sec)
+
+MariaDB [walter]> desc customers;
++-------------+--------------+------+-----+---------+----------------+
+| Field       | Type         | Null | Key | Default | Extra          |
++-------------+--------------+------+-----+---------+----------------+
+| customer_id | int(11)      | NO   | PRI | NULL    | auto_increment |
+| first_name  | varchar(50)  | NO   |     | NULL    |                |
+| last_name   | varchar(50)  | NO   |     | NULL    |                |
+| email       | varchar(100) | NO   |     | NULL    |                |
+| address     | text         | NO   |     | NULL    |                |
++-------------+--------------+------+-----+---------+----------------+
+5 rows in set (0.038 sec)
+
+MariaDB [walter]> desc goods;
++---------------+---------------+------+-----+---------+----------------+
+| Field         | Type          | Null | Key | Default | Extra          |
++---------------+---------------+------+-----+---------+----------------+
+| ID            | int(11)       | NO   | PRI | NULL    | auto_increment |
+| Name          | varchar(100)  | NO   |     | NULL    |                |
+| Category      | varchar(50)   | NO   |     | NULL    |                |
+| Price         | decimal(10,2) | NO   |     | NULL    |                |
+| StockQuantity | int(11)       | NO   |     | NULL    |                |
++---------------+---------------+------+-----+---------+----------------+
+5 rows in set (0.025 sec)
+
+MariaDB [walter]> desc order_item_addons;
++---------------+---------+------+-----+---------+-------+
+| Field         | Type    | Null | Key | Default | Extra |
++---------------+---------+------+-----+---------+-------+
+| order_item_id | int(11) | NO   | PRI | NULL    |       |
+| addon_id      | int(11) | NO   | PRI | NULL    |       |
++---------------+---------+------+-----+---------+-------+
+2 rows in set (0.023 sec)
+
+MariaDB [walter]> desc order_items;
++---------------+---------------+------+-----+---------+----------------+
+| Field         | Type          | Null | Key | Default | Extra          |
++---------------+---------------+------+-----+---------+----------------+
+| order_item_id | int(11)       | NO   | PRI | NULL    | auto_increment |
+| order_id      | int(11)       | YES  | MUL | NULL    |                |
+| product_id    | int(11)       | YES  | MUL | NULL    |                |
+| quantity      | int(11)       | NO   |     | NULL    |                |
+| unit_price    | decimal(10,2) | NO   |     | NULL    |                |
++---------------+---------------+------+-----+---------+----------------+
+5 rows in set (0.023 sec)
+
+MariaDB [walter]> desc orders;
++-------------+-----------------------------+------+-----+---------------------+----------------+
+| Field       | Type                        | Null | Key | Default             | Extra          |
++-------------+-----------------------------+------+-----+---------------------+----------------+
+| order_id    | int(11)                     | NO   | PRI | NULL                | auto_increment |
+| customer_id | int(11)                     | YES  | MUL | NULL                |                |
+| order_date  | timestamp                   | YES  |     | current_timestamp() |                |
+| subtotal    | decimal(10,2)               | YES  |     | NULL                |                |
+| tax         | decimal(10,2)               | YES  |     | NULL                |                |
+| total       | decimal(10,2)               | YES  |     | NULL                |                |
+| status      | enum('pending','completed') | YES  |     | pending             |                |
++-------------+-----------------------------+------+-----+---------------------+----------------+
+7 rows in set (0.021 sec)
+
+MariaDB [walter]> desc products;
++-------------+---------------+------+-----+---------+----------------+
+| Field       | Type          | Null | Key | Default | Extra          |
++-------------+---------------+------+-----+---------+----------------+
+| product_id  | int(11)       | NO   | PRI | NULL    | auto_increment |
+| name        | varchar(100)  | NO   |     | NULL    |                |
+| base_price  | decimal(10,2) | NO   |     | NULL    |                |
+| description | text          | YES  |     | NULL    |                |
+
+
+MariaDB [walter]> show tables;
++---------------------+
+| Tables_in_walter    |
++---------------------+
+| add_ons             |
+| contact_submissions |
+| customers           |
+| goods               |
+| order_item_addons   |
+| order_items         |
+| orders              |
+| products            |
+| suppliers           |
++---------------------+

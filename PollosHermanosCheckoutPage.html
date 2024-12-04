@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .checkout-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .item-details {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .item-name {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .item-quantity, .item-price {
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .addon-details {
+            margin-left: 20px;
+            padding: 5px 0;
+            color: #666;
+            border-left: 2px solid #ddd;
+            padding-left: 10px;
+        }
+
+        .item-total {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #2c5282;
+        }
+
+        .total {
+            text-align: right;
+            font-size: 1.2rem;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .place-order-btn {
+            width: 100%;
+            padding: 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            margin-top: 20px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .place-order-btn:hover {
+            background-color: #218838;
+        }
+
+        .customer-info {
+            margin-bottom: 30px;
+        }
+
+        .customer-info label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .customer-info input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .summary {
+            margin-top: 30px;
+            border-top: 2px solid #eee;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <a href="PollosHermanosShoppingCart.html" style="font-size: xx-large;">Return to Cart</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <a href="polloshermanoswebsite.html" style="font-size: xx-large;">Return to Home</a>
+
+    <div class="checkout-container">
+        <h1>Checkout</h1>
+
+        <div class="customer-info">
+            <h2>Customer Information</h2>
+            <label for="name">Name:</label>
+            <input type="text" id="name" placeholder="Enter your name" required>
+            <label for="email">Email:</label>
+            <input type="email" id="email" placeholder="Enter your email" required>
+            <label for="address">Address:</label>
+            <input type="text" id="address" placeholder="Enter your address" required>
+        </div>
+
+        <div id="checkout-items"></div>
+
+        <div class="summary">
+            <div class="total">
+                Subtotal: $<span id="subtotal">0.00</span><br>
+                Tax (10%): $<span id="tax">0.00</span><br>
+                Grand Total: $<span id="total">0.00</span>
+            </div>
+        </div>
+
+        <button class="place-order-btn" id="place-order-btn">Place Order</button>
+    </div>
+
+<!-- [Previous HTML and style sections remain the same] -->
+
+<script>
+  // Function to load cart items for checkout
+  async function loadCart() {
+    const orderId = localStorage.getItem('currentOrderId');
+
+    if (!orderId) {
+      alert('No items in the cart.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`https://lospolloshermanos.local/checkout_handler.php?order_id=${orderId}`);
+      const data = await response.json();
+      console.log('Cart data:', data);
+
+      if (data.status === 'success') {
+        const cartItemsContainer = document.getElementById('checkout-items');
+        cartItemsContainer.innerHTML = ''; // Clear current items
+
+        let subtotal = 0;
+
+        data.cart_items.forEach(item => {
+          // Display each cart item
+          const cartItem = document.createElement('div');
+          cartItem.classList.add('cart-item');
+
+          const itemDetails = `
+            <div class="item-details">
+              <span class="item-name">${item.product_name}</span>
+              <span class="item-price">$${item.unit_price.toFixed(2)}</span>
+              <span class="item-quantity">Qty: ${item.quantity}</span>
+            </div>
+          `;
+          cartItem.innerHTML = itemDetails;
+
+          if (item.addons && item.addons.length > 0) {
+            const addonsContainer = document.createElement('div');
+            addonsContainer.classList.add('add-ons');
+
+            item.addons.forEach(addon => {
+              const addonItem = `
+                <div class="add-on">
+                  <span class="addon-name">${addon.addon_name}</span>
+                  <span class="addon-price">$${parseFloat(addon.price).toFixed(2)}</span>
+                </div>
+              `;
+              addonsContainer.innerHTML += addonItem;
+            });
+
+            cartItem.appendChild(addonsContainer);
+          }
+
+          cartItemsContainer.appendChild(cartItem);
+          subtotal += item.item_total;
+        });
+
+        const tax = subtotal * 0.10;
+        const total = subtotal + tax;
+
+        // Update totals in the DOM
+        document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+        document.getElementById('tax').textContent = tax.toFixed(2);
+        document.getElementById('total').textContent = total.toFixed(2);
+      } else {
+        throw new Error(data.message || 'Failed to load cart');
+      }
+    } catch (error) {
+      console.error('Error loading cart:', error);
+      alert('Error loading cart: ' + error.message);
+    }
+  }
+
+  // Function to place the order
+// Function to place the order with customer information
+  document.getElementById('place-order-btn').addEventListener('click', async function() {
+      const orderId = localStorage.getItem('currentOrderId');
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const address = document.getElementById('address').value.trim();
+    
+      if (!orderId) {
+          alert('No items in the cart.');
+          return;
+      }
+      if (!name || !email || !address) {
+          alert('Please fill in all customer information fields.');
+          return;
+      }
+
+      try {
+          const response = await fetch('https://lospolloshermanos.local/checkout_handler.php', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                  action: 'place_order',
+                  order_id: orderId,
+                  customer_info: {
+                      name: name,
+                      email: email,
+                      address: address
+                  },
+                  totals: {
+                      subtotal: parseFloat(document.getElementById('subtotal').textContent),
+                      tax: parseFloat(document.getElementById('tax').textContent),
+                      total: parseFloat(document.getElementById('total').textContent)
+                  }
+              })
+          });
+
+          const data = await response.json();
+          if (data.status === 'success') {
+              alert('Order placed successfully!');
+              localStorage.removeItem('currentOrderId');
+              window.location.href = 'confirmation.html'; // Redirect to a confirmation page
+          } else {
+              throw new Error(data.message || 'Failed to place order');
+          }
+      } catch (error) {
+          console.error('Error:', error);
+          alert('Error placing order: ' + error.message);
+      }
+  });
+
+
+  // Load cart items when page loads
+  document.addEventListener('DOMContentLoaded', loadCart);
+</script>
+
+</body>
+</html>

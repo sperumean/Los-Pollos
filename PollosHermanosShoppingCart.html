@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .cart-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .cart-item {
+            margin-bottom: 30px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        .item-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .item-name, .item-price, .quantity-input, .remove-btn, .reset-btn {
+            margin-right: 10px;
+        }
+
+        .item-name {
+            flex: 2;
+            text-align: left;
+        }
+
+        .item-price {
+            flex: 1;
+            text-align: left;
+        }
+
+        .cart-item input[type="number"] {
+            width: 60px;
+            padding: 5px;
+        }
+
+        .remove-btn, .reset-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .remove-btn:hover, .reset-btn:hover {
+            background-color: #c82333;
+        }
+
+        .reset-btn {
+            background-color: #ffc107;
+        }
+
+        .reset-btn:hover {
+            background-color: #e0a800;
+        }
+
+        .add-ons {
+            display: flex;
+            flex-direction: column;
+            margin-top: 10px;
+        }
+
+        .add-on {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .add-on input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        .total {
+            margin-top: 30px;
+            text-align: right;
+            font-size: 1.5rem;
+        }
+
+        .checkout-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .checkout-btn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <a href="polloshermanoswebsite.html" style="font-size: xx-large;">Return to Home</a>
+
+    <div class="cart-container">
+        <h1>Your Shopping Cart</h1>
+
+        <!-- Shopping Cart Items -->
+        <div class="cart-item" id="item1">
+            <div class="item-details">
+                <span class="item-name">French/Curly Fries</span>
+                <span class="item-price" data-price="2.50">$2.50</span>
+                <input type="number" class="quantity-input" value="0" min="0" data-id="1">
+            </div>
+
+            <div class="add-ons">
+                <div class="add-on">
+                    <input type="checkbox" class="addon-checkbox" data-price="3.49" data-name="Combo" data-id="1">
+                    <label>Add-on: Combo (+$3.49)</label>
+                </div>
+                <div class="add-on">
+                    <input type="checkbox" class="addon-checkbox" data-price="2.00" data-name="Chilli P" data-id="2">
+                    <label>Add-on: Chilli P (+$2.00)</label>
+                </div>
+                <div class="add-on">
+                    <input type="checkbox" class="addon-checkbox" data-price="1.00" data-name="Blue Sky" data-id="3">
+                    <label>Add-on: Blue Sky (+$1.00)</label>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="remove-btn" data-id="1">Remove</button>
+                <button class="reset-btn" data-id="1">Reset</button>
+            </div>
+        </div>
+
+        <div class="cart-item" id="item2">
+            <div class="item-details">
+                <span class="item-name">Hermanos Burger</span>
+                <span class="item-price" data-price="3.79">$3.79</span>
+                <input type="number" class="quantity-input" value="0" min="0" data-id="2">
+            </div>
+
+            <div class="add-ons">
+                <div class="add-on">
+                    <input type="checkbox" class="addon-checkbox" data-price="2.20" data-name="Combo" data-id="4">
+                    <label>Add-on: Combo (+$2.20)</label>
+                </div>
+                <div class="add-on">
+                    <input type="checkbox" class="addon-checkbox" data-price="2.00" data-name="Chilli P" data-id="5">
+                    <label>Add-on: Chilli P (+$2.00)</label>
+                </div>
+                <div class="add-on">
+                    <input type="checkbox" class="addon-checkbox" data-price="1.00" data-name="Blue Sky" data-id="6">
+                    <label>Add-on: Blue Sky (+$1.00)</label>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="remove-btn" data-id="2">Remove</button>
+                <button class="reset-btn" data-id="2">Reset</button>
+            </div>
+        </div>
+
+        <div class="cart-item" id="item3">
+            <div class="item-details">
+                <span class="item-name">New Mexico Chicken Burrito</span>
+                <span class="item-price" data-price="3.00">$3.00</span>
+                <input type="number" class="quantity-input" value="0" min="0" data-id="3">
+            </div>
+
+            <div class="add-ons">
+                <div class="add-on">
+                    <input type="checkbox" class="addon-checkbox" data-price="3.00" data-name="Combo" data-id="7">
+                    <label>Add-on: Combo (+$3.00)</label>
+                </div>
+                <div class="add-on">
+                    <input type="checkbox" class="addon-checkbox" data-price="4.00" data-name="Chilli P" data-id="8">
+                    <label>Add-on: Chilli P (+$4.00)</label>
+                </div>
+                <div class="add-on">
+                    <input type="checkbox" class="addon-checkbox" data-price="6.00" data-name="Blue Sky" data-id="9">
+                    <label>Add-on: Blue Sky (+$6.00)</label>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="remove-btn" data-id="3">Remove</button>
+                <button class="reset-btn" data-id="3">Reset</button>
+            </div>
+        </div>
+
+        <!-- Total and Checkout -->
+        <div class="total">
+            <span>Total: $<span id="total-price">0.00</span></span>
+        </div>
+
+        <button class="checkout-btn" id="checkout-btn">Proceed to Checkout</button>
+    </div>
+
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                let orderId = localStorage.getItem('currentOrderId');
+                const totalPriceElement = document.getElementById('total-price');
+                
+                function calculateTotal() {
+                    let total = 0;
+                    const items = document.querySelectorAll('.cart-item');
+                    
+                    items.forEach(item => {
+                        const quantity = parseInt(item.querySelector('.quantity-input').value) || 0;
+                        const basePrice = parseFloat(item.querySelector('.item-price').dataset.price);
+                        let itemTotal = quantity * basePrice;
+                        
+                        const selectedAddons = item.querySelectorAll('.addon-checkbox:checked');
+                        selectedAddons.forEach(addon => {
+                            itemTotal += parseFloat(addon.dataset.price) * quantity;
+                        });
+                        
+                        total += itemTotal;
+                    });
+                    
+                    totalPriceElement.textContent = total.toFixed(2);
+                    return total;
+                }
+
+				async function updateCart(productId, quantity, addons) {
+					console.log(`Updating cart for product ID ${productId} with quantity ${quantity}`);
+					
+					try {
+						const response = await fetch('https://lospolloshermanos.local/cart_handler.php', {
+							method: 'POST',
+							credentials: 'include',
+							headers: {
+								'Content-Type': 'application/json',
+								'Accept': 'application/json'
+							},
+							body: JSON.stringify({
+								action: 'add',
+								order_id: orderId || 'new',
+								product_id: productId,
+								quantity: quantity,
+								price: parseFloat(document.querySelector(`[data-id="${productId}"]`)
+									.closest('.cart-item')
+									.querySelector('.item-price')
+									.dataset.price),
+								addons: addons
+							})
+						});
+
+						// Add error logging
+						if (!response.ok) {
+							const errorText = await response.text();
+							console.error('Server error response:', errorText);
+							throw new Error(`HTTP error! status: ${response.status}`);
+						}
+						
+						// Check if response is empty
+						const responseText = await response.text();
+						if (!responseText) {
+							throw new Error('Empty response from server');
+						}
+						
+						// Try to parse JSON
+						const data = JSON.parse(responseText);
+						console.log('Server response:', data);
+
+						if (data.status === 'success') {
+							if (!orderId) {
+								orderId = data.order_id;
+								localStorage.setItem('currentOrderId', orderId);
+							}
+							return true;
+						} else {
+							throw new Error(data.message || 'Failed to update cart');
+						}
+					} catch (error) {
+						console.error('Error:', error);
+						alert('Error updating cart. Please try again.');
+						return false;
+					}
+				}
+
+				// Update remove button listener
+				document.querySelectorAll('.remove-btn').forEach(button => {
+					button.addEventListener('click', async function() {
+						const productId = this.dataset.id;
+						try {
+							const response = await fetch('https://lospolloshermanos.local/cart_handler.php', {
+								method: 'POST',
+								credentials: 'include',
+								headers: {
+									'Content-Type': 'application/json',
+									'Accept': 'application/json'
+								},
+								body: JSON.stringify({
+									action: 'remove',
+									order_id: orderId,
+									product_id: productId
+								})
+							});
+
+							// Add error handling
+							if (!response.ok) {
+								const errorText = await response.text();
+								console.error('Server error response:', errorText);
+								throw new Error(`HTTP error! status: ${response.status}`);
+							}
+
+							const data = await response.json();
+							if (data.status === 'success') {
+								const cartItem = this.closest('.cart-item');
+								cartItem.querySelector('.quantity-input').value = 0;
+								cartItem.querySelectorAll('.addon-checkbox').forEach(checkbox => {
+									checkbox.checked = false;
+								});
+								calculateTotal();
+							}
+						} catch (error) {
+							console.error('Error:', error);
+							alert('Error removing item. Please try again.');
+						}
+					});
+				});
+
+				// Update checkout button URL
+				document.getElementById('checkout-btn').addEventListener('click', function() {
+					const total = calculateTotal();
+					if (total > 0 && orderId) {
+						localStorage.setItem('cartTotal', total);
+						window.location.href = `https://lospolloshermanos.local/PollosHermanosCheckoutPage.html?order=${orderId}`;
+					} else {
+						alert('Your cart is empty!');
+					}
+				});
+
+				// Quantity change listener
+				document.querySelectorAll('.quantity-input').forEach(input => {
+					input.addEventListener('change', async function() {
+						const productId = this.dataset.id;
+						const quantity = parseInt(this.value) || 0;
+						const cartItem = this.closest('.cart-item');
+						
+						// Fetch selected add-ons
+						const addons = Array.from(cartItem.querySelectorAll('.addon-checkbox:checked'))
+							.map(checkbox => ({
+								id: parseInt(checkbox.dataset.id),
+								price: parseFloat(checkbox.dataset.price)
+							}));
+
+						// Update cart with correct quantity
+						if (await updateCart(productId, quantity, addons)) {
+							calculateTotal();
+						}
+					});
+				});
+
+				// Add-on change listener
+				document.querySelectorAll('.addon-checkbox').forEach(checkbox => {
+					checkbox.addEventListener('change', async function() {
+						const cartItem = this.closest('.cart-item');
+						const quantityInput = cartItem.querySelector('.quantity-input');
+						const productId = quantityInput.dataset.id;
+						const quantity = parseInt(quantityInput.value) || 0;
+						
+						// Fetch add-ons again after change
+						const addons = Array.from(cartItem.querySelectorAll('.addon-checkbox:checked'))
+							.map(checkbox => ({
+								id: parseInt(checkbox.dataset.id),
+								price: parseFloat(checkbox.dataset.price)
+							}));
+
+						// Only update add-ons without modifying quantity in `updateCart`
+						if (await updateCart(productId, quantity, addons)) {
+							calculateTotal();
+						}
+					});
+				});
+
+
+                // Remove button listener
+                document.querySelectorAll('.remove-btn').forEach(button => {
+                    button.addEventListener('click', async function() {
+                        const productId = this.dataset.id;
+                        try {
+							const response = await fetch('https://lospolloshermanos.local/cart_handler.php', {
+								method: 'POST',
+								credentials: 'include', // Add this line
+								headers: {
+									'Content-Type': 'application/json',
+									'Accept': 'application/json'
+								},
+								body: JSON.stringify({
+									action: 'remove',
+									order_id: orderId,
+									product_id: productId
+								})
+							});
+
+                            const data = await response.json();
+                            if (data.status === 'success') {
+                                const cartItem = this.closest('.cart-item');
+                                cartItem.querySelector('.quantity-input').value = 0;
+                                cartItem.querySelectorAll('.addon-checkbox').forEach(checkbox => {
+                                    checkbox.checked = false;
+                                });
+                                calculateTotal();
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            alert('Error removing item. Please try again.');
+                        }
+                    });
+                });
+
+
+
+
+                // Initialize total
+                calculateTotal();
+            });
+        </script>
+    </div>
+</body>
+</html>

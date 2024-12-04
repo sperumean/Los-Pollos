@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact US</title>
+    <style>
+        body {
+            background-color: yellow;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .home-link {
+            font-size: xx-large;
+            color: red;
+            text-decoration: none;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        .home-link:hover {
+            text-decoration: underline;
+        }
+
+        .header-text {
+            font-size: xx-large;
+            color: red;
+            margin: 20px 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+
+        select {
+            height: 45px;
+        }
+
+        textarea {
+            height: 200px;
+            resize: vertical;
+        }
+
+        .button-group {
+            margin-top: 30px;
+        }
+
+        input[type="submit"],
+        input[type="reset"] {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        input[type="reset"] {
+            background-color: #f44336;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        input[type="reset"]:hover {
+            background-color: #da190b;
+        }
+
+        #message {
+            display: none;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .success {
+            background-color: #dff0d8;
+            border: 1px solid #d6e9c6;
+            color: #3c763d;
+        }
+
+        .error {
+            background-color: #f2dede;
+            border: 1px solid #ebccd1;
+            color: #a94442;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            input[type="submit"],
+            input[type="reset"] {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+
+
+
+
+
+<body>
+    <a href="polloshermanoswebsite.html" class="home-link">Return to Home</a>
+    <p class="header-text"><strong>Please feel free to contact us, we wouldn't want to keep you waiting.</strong></p>
+    
+    <div class="container">
+        <!-- Remove method and action from form -->
+        <form id="contactForm" aria-label="Contact Form">
+            <!-- Keep all your form fields the same -->
+            <div class="form-group">
+                <label for="fname">First Name</label>
+                <input 
+                    type="text" 
+                    id="fname" 
+                    name="firstname" 
+                    placeholder="Your name.." 
+                    required 
+                    aria-required="true">
+            </div>
+            
+            <div class="form-group">
+                <label for="lname">Last Name</label>
+                <input 
+                    type="text" 
+                    id="lname" 
+                    name="lastname" 
+                    placeholder="Your last name.." 
+                    required 
+                    aria-required="true">
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    placeholder="whatthesigma@example.com" 
+                    required 
+                    aria-required="true">
+            </div>
+            
+            <div class="form-group">
+                <label for="Service">Services</label>
+                <select id="Service" name="Service" aria-label="Select a service">
+                    <option value="Customer Service">Customer Service</option>
+                    <option value="Saul Goodman">Saul Goodman</option>
+                    <option value="Walt & Jesse">Walt & Jesse</option>
+                    <option value="Madrigal">Madrigal Industries</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="country">Country</label>
+                <select id="country" name="country" aria-label="Select your country">
+                    <option value="USA">USA</option>
+                    <option value="Mexico">Mexico</option>
+                    <option value="Belize">Belize</option>
+                    <option value="Czech Republic">Czech Republic</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="subject">Subject</label>
+                <textarea 
+                    id="subject" 
+                    name="subject" 
+                    placeholder="Write something.." 
+                    aria-label="Enter your message"></textarea>
+            </div>
+            
+            <div class="button-group">
+                <input type="reset" value="Reset" aria-label="Reset form">
+                <input type="submit" value="Submit" aria-label="Submit form">
+            </div>
+        </form>
+        <div id="message" role="alert" aria-live="polite"></div>
+    </div>
+
+
+
+
+    <script>
+        document.getElementById('contactForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const messageDiv = document.getElementById('message');
+            messageDiv.style.display = 'none';
+            
+            const submitButton = this.querySelector('input[type="submit"]');
+            submitButton.value = 'Sending...';
+            submitButton.disabled = true;
+            
+            fetch('https://lospolloshermanos.local/action_page.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())  // Change to text() instead of using response.url
+            .then(html => {
+                // Replace the entire page content with the response
+                document.documentElement.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                messageDiv.style.display = 'block';
+                messageDiv.className = 'error';
+                messageDiv.innerHTML = 'There was an error submitting your form. Please try again.';
+            })
+            .finally(() => {
+                submitButton.value = 'Submit';
+                submitButton.disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>

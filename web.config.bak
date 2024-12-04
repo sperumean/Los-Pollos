@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <connectionStrings>
+        <add name="DefaultConnection" 
+             connectionString="Driver={MariaDB ODBC 3.1 Driver};Server=localhost;Database=walter;User=root;Password=W00fW00f#!?;" 
+             providerName="System.Data.Odbc" />
+    </connectionStrings>
+    <system.webServer>
+        <defaultDocument>
+            <files>
+                <remove value="iisstart.htm" />
+                <remove value="index.html" />
+                <remove value="index.htm" />
+                <remove value="Default.asp" />
+                <remove value="Default.htm" />
+                <add value="polloshermanoswebsite.html" />
+            </files>
+        </defaultDocument>
+        <handlers>
+            <remove name="PHP_via_FastCGI" />
+            <add name="PHP_via_FastCGI" 
+                 path="*.php" 
+                 verb="*" 
+                 modules="FastCgiModule" 
+                 scriptProcessor="C:\PHP\php-8.3.13-Win32-vs16-x64\php-cgi.exe" 
+                 resourceType="File" />
+        </handlers>
+    </system.webServer>
+</configuration>
