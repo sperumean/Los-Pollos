@@ -528,27 +528,30 @@ class RequestHandler(BaseHTTPRequestHandler):
     def handle_contact_form(self):
         print("\n=== Contact Form Submission ===")
         try:
+            # Get content length
+            content_length = int(self.headers.get('Content-Length', 0))
+            # Read post data
+            post_data = self.rfile.read(content_length).decode('utf-8')
+            
             # Parse form data
-            form = cgi.FieldStorage(
-                fp=self.rfile,
-                headers=self.headers,
-                environ={
-                    'REQUEST_METHOD': 'POST',
-                    'CONTENT_TYPE': self.headers['Content-Type'],
-                }
-            )
+            if self.headers.get('Content-Type') == 'application/json':
+                # Handle JSON data
+                data = json.loads(post_data)
+            else:
+                # Handle form data
+                form_data = parse_qs(post_data)
+                data = {}
+                for key, values in form_data.items():
+                    data[key] = values[0] if values else ''
             
             # Validate required fields
             required_fields = ['firstname', 'lastname', 'email', 'Service', 'country']
-            data = {}
             for field in required_fields:
-                value = form.getvalue(field)
-                if not value:
+                if field not in data or not data[field]:
                     raise ValueError(f"Missing required field: {field}")
-                data[field] = value
             
             # Add optional subject field
-            data['subject'] = form.getvalue('subject', '')
+            data['subject'] = data.get('subject', '')
             
             print("Form Data:", data)
             
@@ -556,7 +559,6 @@ class RequestHandler(BaseHTTPRequestHandler):
             db = DatabaseConnection()
             conn = db.connect()
             cursor = conn.cursor()
-            
             print("Database connected successfully")
             
             # Prepare and execute query
