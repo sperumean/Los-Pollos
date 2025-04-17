@@ -191,6 +191,74 @@
             font-size: 0.9rem;
             color: var(--accent-color);
         }
+
+        /* Server status indicator */
+        .server-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+        
+        .server-status.online {
+            background-color: #28a745;
+        }
+        
+        /* Video troubleshooting */
+        .video-troubleshoot {
+            margin-top: var(--spacing-md);
+            padding: var(--spacing-md);
+            background-color: rgba(26, 82, 118, 0.1);
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .help-button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        
+        .help-button:hover {
+            background-color: #2980b9;
+        }
+        
+        .video-fallback {
+            margin-top: var(--spacing-md);
+            padding: var(--spacing-md);
+            border-radius: 8px;
+            background-color: rgba(249, 201, 34, 0.1);
+            display: none;
+        }
+        
+        .image-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .image-gallery img {
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .image-gallery img:hover {
+            transform: scale(1.05);
+        }
         
         /* Responsive design */
         @media (max-width: 768px) {
