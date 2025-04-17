@@ -539,7 +539,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                         INSERT INTO orders (status) VALUES ('pending')
                     """)
                     cart_data['order_id'] = cursor.lastrowid
-
+                    print(f"Created new order ID: {cart_data['order_id']}")
                 # Get correct product price from database
                 cursor.execute("""
                     SELECT base_price FROM products WHERE product_id = %s
