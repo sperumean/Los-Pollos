@@ -1,0 +1,303 @@
+-- MySQL Database Setup Script for Los Pollos Hermanos
+
+-- Create Database
+CREATE DATABASE IF NOT EXISTS walter;
+USE walter;
+
+-- Create Products Table
+CREATE TABLE IF NOT EXISTS products (
+    product_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    base_price DECIMAL(10, 2) NOT NULL,
+    category VARCHAR(50),
+    image_path VARCHAR(255)
+);
+
+-- Create Add-ons Table
+CREATE TABLE IF NOT EXISTS add_ons (
+    addon_id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT,
+    name VARCHAR(100) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
+);
+
+-- Create Orders Table
+CREATE TABLE IF NOT EXISTS orders (
+    order_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NULL,
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'pending',
+    subtotal DECIMAL(10, 2) NULL,
+    tax DECIMAL(10, 2) NULL,
+    total DECIMAL(10, 2) NULL
+);
+
+-- Create Order Items Table
+CREATE TABLE IF NOT EXISTS order_items (
+    order_item_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    unit_price DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(product_id)
+);
+
+-- Create Order Item Add-ons Table
+CREATE TABLE IF NOT EXISTS order_item_addons (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_item_id INT NOT NULL,
+    addon_id INT NOT NULL,
+    FOREIGN KEY (order_item_id) REFERENCES order_items(order_item_id) ON DELETE CASCADE,
+    FOREIGN KEY (addon_id) REFERENCES add_ons(addon_id)
+);
+
+-- Create Customers Table
+CREATE TABLE IF NOT EXISTS customers (
+    customer_id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    address TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create Contact Submissions Table
+CREATE TABLE IF NOT EXISTS contact_submissions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    service VARCHAR(100) NOT NULL,
+    country VARCHAR(100) NOT NULL,
+    subject TEXT,
+    submission_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert Sample Products
+INSERT INTO products (name, description, base_price, category, image_path) VALUES
+('French/Curly Fries', 'Crispy golden fries, perfectly seasoned.', 2.50, 'Sides', 'french_fries.jpg'),
+('Hermanos Burger', 'Juicy beef patty with our special sauce.', 3.79, 'Burgers', 'burger.jpg'),
+('New Mexico Chicken Burrito', 'Tender chicken wrapped in a soft tortilla.', 3.00, 'Mexican', 'chicken_burrito.jpg');
+
+-- Insert Sample Add-ons
+INSERT INTO add_ons (product_id, name, price) VALUES
+(1, 'Combo', 3.49),
+(1, 'Chilli P', 2.00),
+(1, 'Blue Sky', 1.00),
+(2, 'Combo', 2.20),
+(2, 'Chilli P', 2.00),
+(2, 'Blue Sky', 1.00),
+(3, 'Combo', 3.00),
+(3, 'Chilli P', 4.00),
+(3, 'Blue Sky', 6.00);
+
+-- Sample data for demonstration
+INSERT INTO customers (first_name, last_name, email, address) VALUES
+('Walter', 'White', 'walter@example.com', '308 Negra Arroyo Lane, Albuquerque, NM'),
+('Jesse', 'Pinkman', 'jesse@example.com', '9809 Margo Street, Albuquerque, NM'),
+('Gustavo', 'Fring', 'gus@lospolloshermanos.com', '1213 Jefferson St NE, Albuquerque, NM');
+
+-- Sample order
+INSERT INTO orders (customer_id, status, subtotal, tax, total) VALUES
+(1, 'completed', 12.50, 1.25, 13.75);
+
+-- Sample order items
+INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES
+(1, 1, 2, 2.50),  -- 2 orders of French Fries
+(1, 3, 1, 3.00);  -- 1 Chicken Burrito
+
+-- Sample order item add-ons
+INSERT INTO order_item_addons (order_item_id, addon_id) VALUES
+(1, 3),  -- Blue Sky add-on for French Fries
+(2, 8);  -- Chilli P add-on for Chicken Burrito
+
+-- Create Inventory Tables
+CREATE TABLE IF NOT EXISTS inventory_categories (
+    category_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT
+);
+
+CREATE TABLE IF NOT EXISTS inventory_items (
+    item_id INT AUTO_INCREMENT PRIMARY KEY,
+    category_id INT,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    unit VARCHAR(50),
+    cost_per_unit DECIMAL(10, 2),
+    current_quantity DECIMAL(10, 2),
+    reorder_threshold DECIMAL(10, 2),
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES inventory_categories(category_id)
+);
+
+CREATE TABLE IF NOT EXISTS suppliers (
+    supplier_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    contact_person VARCHAR(100),
+    contact_number VARCHAR(20),
+    email VARCHAR(100),
+    address TEXT,
+    notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS supplier_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    supplier_id INT,
+    item_id INT,
+    supplier_item_code VARCHAR(50),
+    price DECIMAL(10, 2),
+    lead_time_days INT,
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id),
+    FOREIGN KEY (item_id) REFERENCES inventory_items(item_id)
+);
+
+CREATE TABLE IF NOT EXISTS inventory_transactions (
+    transaction_id INT AUTO_INCREMENT PRIMARY KEY,
+    item_id INT,
+    transaction_type ENUM('purchase', 'usage', 'adjustment', 'spoilage'),
+    quantity DECIMAL(10, 2),
+    transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    unit_price DECIMAL(10, 2),
+    supplier_id INT NULL,
+    notes TEXT,
+    created_by VARCHAR(50),
+    FOREIGN KEY (item_id) REFERENCES inventory_items(item_id),
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id)
+);
+
+-- Insert sample inventory categories
+INSERT INTO inventory_categories (name, description) VALUES
+('Meat', 'All meat products including chicken, beef, etc.'),
+('Produce', 'Fresh vegetables and fruits'),
+('Dairy', 'Milk, cheese, and other dairy products'),
+('Dry Goods', 'Non-perishable items like flour, sugar, spices'),
+('Packaging', 'Containers, bags, wraps for food items'),
+('Cleaning Supplies', 'Sanitizers, detergents, and other cleaning materials');
+
+-- Insert sample inventory items
+INSERT INTO inventory_items (category_id, name, description, unit, cost_per_unit, current_quantity, reorder_threshold) VALUES
+(1, 'Chicken Breasts', 'Boneless skinless chicken breasts', 'kg', 5.99, 45.5, 20.0),
+(1, 'Ground Beef', '80/20 ground beef', 'kg', 4.50, 30.0, 15.0),
+(2, 'Tomatoes', 'Fresh Roma tomatoes', 'kg', 2.99, 25.0, 10.0),
+(2, 'Lettuce', 'Iceberg lettuce heads', 'unit', 1.49, 20.0, 8.0),
+(2, 'Onions', 'Yellow onions', 'kg', 1.29, 35.0, 15.0),
+(3, 'Cheese', 'Cheddar cheese slices', 'kg', 7.99, 15.0, 5.0),
+(4, 'Flour', 'All-purpose flour', 'kg', 0.89, 50.0, 20.0),
+(4, 'Rice', 'Long grain white rice', 'kg', 1.49, 40.0, 15.0),
+(4, 'Spice Mix', 'Proprietary Los Pollos Hermanos spice blend', 'kg', 12.99, 10.0, 3.0),
+(5, 'Food Containers', 'Medium size takeout containers', 'unit', 0.15, 500.0, 200.0),
+(5, 'Paper Bags', 'Branded paper bags', 'unit', 0.10, 1000.0, 300.0);
+
+-- Insert sample suppliers
+INSERT INTO suppliers (name, contact_person, contact_number, email, address, notes) VALUES
+('ABQ Meat Distributors', 'Mike Ehrmantraut', '505-555-1234', 'mike@abqmeat.com', '2104 Industrial Blvd, Albuquerque, NM', 'Reliable supplier for all meat products'),
+('Southwest Produce Co', 'Skyler White', '505-555-2345', 'skyler@swproduce.com', '8300 Menaul Blvd NE, Albuquerque, NM', 'Local produce with delivery 3 times per week'),
+('Madrigal Elektromotoren', 'Lydia Rodarte-Quayle', '505-555-3456', 'lydia@madrigal.de', '101 Trade Center, Albuquerque, NM', 'International supplier for specialty items'),
+('Packaging Solutions Inc', 'Saul Goodman', '505-555-4567', 'saul@packingsolutions.com', '9800 Montgomery Blvd NE, Albuquerque, NM', 'Better call Saul for all packaging needs!');
+
+-- Link suppliers to items
+INSERT INTO supplier_items (supplier_id, item_id, supplier_item_code, price, lead_time_days) VALUES
+(1, 1, 'CB-001', 5.50, 2),  -- Chicken from ABQ Meat
+(1, 2, 'GB-002', 4.25, 2),  -- Ground beef from ABQ Meat
+(2, 3, 'TOM-100', 2.75, 1), -- Tomatoes from Southwest
+(2, 4, 'LET-101', 1.25, 1), -- Lettuce from Southwest
+(2, 5, 'ONI-102', 1.15, 1), -- Onions from Southwest
+(3, 9, 'SPX-001', 12.50, 7), -- Special spice mix from Madrigal
+(4, 10, 'FC-500', 0.14, 3), -- Food containers from Packaging Solutions
+(4, 11, 'PB-100', 0.09, 3); -- Paper bags from Packaging Solutions
+
+-- Create User Management Tables
+CREATE TABLE IF NOT EXISTS user_roles (
+    role_id INT AUTO_INCREMENT PRIMARY KEY,
+    role_name VARCHAR(50) NOT NULL,
+    description TEXT
+);
+
+CREATE TABLE IF NOT EXISTS users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    role_id INT NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    last_login TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (role_id) REFERENCES user_roles(role_id)
+);
+
+CREATE TABLE IF NOT EXISTS user_activity_log (
+    log_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    activity_type VARCHAR(50) NOT NULL,
+    activity_details TEXT,
+    ip_address VARCHAR(45),
+    logged_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+-- Insert sample user roles
+INSERT INTO user_roles (role_name, description) VALUES
+('Admin', 'Full access to all system features'),
+('Manager', 'Access to manage inventory, orders, and reporting'),
+('Cashier', 'Access to process orders and view inventory'),
+('Kitchen Staff', 'Access to view orders and update preparation status');
+
+-- Insert sample users (password is 'password' hashed with dummy value - in real app use proper hashing)
+INSERT INTO users (username, password_hash, first_name, last_name, email, role_id) VALUES
+('gfring', '$2y$10$dummyhashvalueforsecurity', 'Gustavo', 'Fring', 'gus@lospolloshermanos.com', 1),
+('wwhite', '$2y$10$dummyhashvalueforsecurity', 'Walter', 'White', 'walter@lospolloshermanos.com', 3),
+('jpinkman', '$2y$10$dummyhashvalueforsecurity', 'Jesse', 'Pinkman', 'jesse@lospolloshermanos.com', 4);
+
+-- Create a Database Configuration File Table
+CREATE TABLE IF NOT EXISTS db_config (
+    config_id INT AUTO_INCREMENT PRIMARY KEY,
+    config_key VARCHAR(100) NOT NULL UNIQUE,
+    config_value TEXT,
+    description TEXT,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Insert default configuration values
+INSERT INTO db_config (config_key, config_value, description) VALUES
+('tax_rate', '0.10', 'Default tax rate (10%)'),
+('store_name', 'Los Pollos Hermanos', 'Name of the restaurant'),
+('store_address', '12000 Montgomery Blvd NE, Albuquerque, NM', 'Physical address of the restaurant'),
+('store_phone', '505-555-0162', 'Contact phone number'),
+('store_email', 'info@lospolloshermanos.com', 'Contact email address'),
+('currency', 'USD', 'Default currency'),
+('receipt_footer', 'Thank you for dining at Los Pollos Hermanos! Los Pollos Hermanos - Taste the Family!', 'Text to display at the bottom of receipts');
+
+-- Create a view for inventory status
+CREATE OR REPLACE VIEW inventory_status AS
+SELECT 
+    i.item_id,
+    i.name,
+    c.name AS category,
+    i.current_quantity,
+    i.unit,
+    i.reorder_threshold,
+    CASE 
+        WHEN i.current_quantity <= i.reorder_threshold THEN 'Low Stock'
+        WHEN i.current_quantity <= (i.reorder_threshold * 1.5) THEN 'Moderate'
+        ELSE 'Good'
+    END AS stock_status,
+    s.name AS primary_supplier,
+    s.contact_number AS supplier_contact
+FROM 
+    inventory_items i
+JOIN 
+    inventory_categories c ON i.category_id = c.category_id
+LEFT JOIN 
+    supplier_items si ON i.item_id = si.item_id
+LEFT JOIN 
+    suppliers s ON si.supplier_id = s.supplier_id
+GROUP BY 
+    i.item_id
+ORDER BY 
+    stock_status ASC, c.name, i.name;
