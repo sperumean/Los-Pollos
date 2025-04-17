@@ -8,7 +8,13 @@ import decimal
 from decimal import Decimal
 import email.parser
 
-
+# Add this after your imports but before the class definitions
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, decimal.Decimal):
+            return float(obj)
+        return super(DecimalEncoder, self).default(obj)
+        
 class DatabaseConnection:
     def __init__(self):
         self.config = {
@@ -216,7 +222,8 @@ class RequestHandler(BaseHTTPRequestHandler):
                     # Try common variations of the path
                     file_path.replace('\\', '/'),
                     os.path.basename(file_path),
-                    os.path.join('..', file_path)
+                    os.path.join('..', file_path),
+                    os.path.join('images', os.path.basename(file_path))  # Check in images directory
                 ]
                 
                 # Print alternative paths being checked
@@ -359,7 +366,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             if 'conn' in locals():
                 conn.close()
                 
-        self.wfile.write(json.dumps(response).encode())
+        self.wfile.write(json.dumps(response, cls=DecimalEncoder).encode())
 
     def handle_cart_remove(self):
         content_length = int(self.headers.get('Content-Length', 0))
@@ -401,7 +408,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             if 'conn' in locals():
                 conn.close()
                 
-        self.wfile.write(json.dumps(response).encode())
+        self.wfile.write(json.dumps(response, cls=DecimalEncoder).encode())
 
     def handle_cart_update(self):
         content_length = int(self.headers.get('Content-Length', 0))
@@ -440,7 +447,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             if 'conn' in locals():
                 conn.close()
                 
-        self.wfile.write(json.dumps(response).encode())
+        self.wfile.write(json.dumps(response, cls=DecimalEncoder).encode())
 
     def handle_cart_checkout(self):
         content_length = int(self.headers.get('Content-Length', 0))
@@ -501,7 +508,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             if 'conn' in locals():
                 conn.close()
                 
-        self.wfile.write(json.dumps(response).encode())
+        self.wfile.write(json.dumps(response, cls=DecimalEncoder).encode())
 
     def handle_cart_add(self): 
         content_length = int(self.headers.get('Content-Length', 0))
@@ -618,7 +625,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             if 'conn' in locals():
                 conn.close()
                 
-        self.wfile.write(json.dumps(response).encode())
+        self.wfile.write(json.dumps(response, cls=DecimalEncoder).encode())
 
     def handle_get_cart(self, order_id):
         try:
@@ -721,7 +728,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps(response, default=str).encode())
+            self.wfile.write(json.dumps(response, cls=DecimalEncoder).encode())
             
         except Exception as e:
             print("Error in handle_get_cart:", str(e))
@@ -825,7 +832,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 conn.close()
                 print("Database connection closed")
                 
-        self.wfile.write(json.dumps(response).encode())
+        self.wfile.write(json.dumps(response, cls=DecimalEncoder).encode())
 
 def run(server_class=HTTPServer, handler_class=RequestHandler, port=8000):
     server_address = ('', port)
