@@ -2,11 +2,11 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 import mysql.connector
 from urllib.parse import parse_qs, urlparse
-import cgi
 import os
 import mimetypes
 import decimal
 from decimal import Decimal
+import email.parser
 
 
 class DatabaseConnection:
@@ -36,6 +36,172 @@ class DatabaseConnection:
         except Exception as e:
             print("Database connection failed:", str(e))
             raise e
+
+
+class FieldStorage:
+    """Replacement for cgi.FieldStorage that uses urllib and email packages"""
+    
+    def __init__(self, environ=None, headers=None, fp=None, keep_blank_values=False):
+        self.environ = environ or {}
+        self.headers = headers
+        self.fp = fp
+        self.keep_blank_values = keep_blank_values
+        self.form = {}
+        self.files = {}
+        self._parse_input()
+    
+    def _parse_input(self):
+        # Get content type from headers or environ
+        content_type = self.headers.get('Content-Type', '') if self.headers else ''
+        if not content_type and 'CONTENT_TYPE' in self.environ:
+            content_type = self.environ['CONTENT_TYPE']
+        
+        # Get content length
+        content_length = 0
+        if self.headers and 'Content-Length' in self.headers:
+            try:
+                content_length = int(self.headers['Content-Length'])
+            except ValueError:
+                content_length = 0
+        elif 'CONTENT_LENGTH' in self.environ:
+            try:
+                content_length = int(self.environ['CONTENT_LENGTH'])
+            except ValueError:
+                content_length = 0
+        
+        # Parse form data based on content type
+        if content_type.startswith('application/x-www-form-urlencoded'):
+            # Handle URL-encoded form data
+            if self.fp:
+                data = self.fp.read(content_length).decode('utf-8')
+                self.form = parse_qs(data, keep_blank_values=self.keep_blank_values)
+        elif content_type.startswith('application/json'):
+            # Handle JSON data
+            if self.fp:
+                data = self.fp.read(content_length).decode('utf-8')
+                try:
+                    json_data = json.loads(data)
+                    # Convert JSON object to form-like structure
+                    if isinstance(json_data, dict):
+                        for key, value in json_data.items():
+                            self.form[key] = [value] if not isinstance(value, list) else value
+                except json.JSONDecodeError:
+                    pass
+        elif content_type.startswith('multipart/form-data'):
+            # Handle multipart form data (files + form fields)
+            if not self.fp:
+                return
+                
+            # Find boundary
+            boundary = None
+            for part in content_type.split(';'):
+                part = part.strip()
+                if part.startswith('boundary='):
+                    boundary = part[9:]
+                    if boundary.startswith('"') and boundary.endswith('"'):
+                        boundary = boundary[1:-1]
+                    break
+            
+            if not boundary:
+                return
+                
+            # Read and parse multipart data
+            data = self.fp.read(content_length)
+            
+            # Parse the multipart form data
+            message = email.parser.BytesParser().parsebytes(
+                b'Content-Type: ' + content_type.encode() + b'\r\n\r\n' + data
+            )
+            
+            if message.is_multipart():
+                for part in message.get_payload():
+                    # Get the part's Content-Disposition header
+                    content_disp = part.get('Content-Disposition', '')
+                    if not content_disp:
+                        continue
+                        
+                    # Parse the Content-Disposition to get the field name
+                    disposition_parts = content_disp.split(';')
+                    if disposition_parts[0].strip() != 'form-data':
+                        continue
+                        
+                    # Extract field name
+                    field_name = None
+                    filename = None
+                    for disp_part in disposition_parts[1:]:
+                        disp_part = disp_part.strip()
+                        if disp_part.startswith('name='):
+                            field_name = disp_part[5:]
+                            if field_name.startswith('"') and field_name.endswith('"'):
+                                field_name = field_name[1:-1]
+                        elif disp_part.startswith('filename='):
+                            filename = disp_part[9:]
+                            if filename.startswith('"') and filename.endswith('"'):
+                                filename = filename[1:-1]
+                    
+                    if not field_name:
+                        continue
+                        
+                    # Get the part's payload
+                    payload = part.get_payload(decode=True)
+                    
+                    # If filename is provided, treat as file upload
+                    if filename:
+                        content_type = part.get_content_type()
+                        self.files[field_name] = {
+                            'filename': filename,
+                            'content_type': content_type,
+                            'data': payload
+                        }
+                    else:
+                        # Regular form field
+                        value = payload.decode('utf-8')
+                        if field_name in self.form:
+                            if isinstance(self.form[field_name], list):
+                                self.form[field_name].append(value)
+                            else:
+                                self.form[field_name] = [self.form[field_name], value]
+                        else:
+                            self.form[field_name] = [value]
+        
+        # Handle query string parameters for GET requests
+        if 'QUERY_STRING' in self.environ:
+            query_params = parse_qs(self.environ['QUERY_STRING'], 
+                                    keep_blank_values=self.keep_blank_values)
+            # Merge with form data, query params take precedence
+            for key, values in query_params.items():
+                self.form[key] = values
+    
+    def getvalue(self, field_name, default=None):
+        """Get the value of a field"""
+        if field_name in self.form:
+            values = self.form[field_name]
+            if values and len(values) > 0:
+                return values[0]
+        return default
+    
+    def getlist(self, field_name):
+        """Get all values of a field as a list"""
+        return self.form.get(field_name, [])
+    
+    def getfirst(self, field_name, default=None):
+        """Get the first value of a field"""
+        return self.getvalue(field_name, default)
+    
+    def keys(self):
+        """Return all field names"""
+        return list(self.form.keys())
+    
+    def __contains__(self, key):
+        return key in self.form
+    
+    def __getitem__(self, key):
+        if key in self.form:
+            values = self.form[key]
+            if values and len(values) > 0:
+                return values[0]
+        raise KeyError(key)
+
 
 class RequestHandler(BaseHTTPRequestHandler):
     def serve_file(self, file_path, content_type):
@@ -138,7 +304,6 @@ class RequestHandler(BaseHTTPRequestHandler):
             print(f"Unsupported path: {path}")
             self.send_error(404)
 
-    # [Rest of the handler methods remain unchanged]
     def do_POST(self):
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
@@ -158,7 +323,6 @@ class RequestHandler(BaseHTTPRequestHandler):
         else:
             self.send_error(404)
 
-    # [Include all your existing handler methods here...]
     def handle_get_products(self):
         try:
             db = DatabaseConnection()
@@ -196,8 +360,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 conn.close()
                 
         self.wfile.write(json.dumps(response).encode())
-    
-    # [Include the rest of your handler methods here...]
+
     def handle_cart_remove(self):
         content_length = int(self.headers.get('Content-Length', 0))
         post_data = self.rfile.read(content_length)
@@ -579,18 +742,27 @@ class RequestHandler(BaseHTTPRequestHandler):
     def handle_contact_form(self):
         print("\n=== Contact Form Submission ===")
         try:
-            # Get content length
+            # Get content-type and content-length
+            content_type = self.headers.get('Content-Type', '')
             content_length = int(self.headers.get('Content-Length', 0))
-            # Read post data
-            post_data = self.rfile.read(content_length).decode('utf-8')
             
-            # Parse form data
-            if self.headers.get('Content-Type') == 'application/json':
-                # Handle JSON data
-                data = json.loads(post_data)
+            # Set up environment dict for FieldStorage
+            environ = {
+                'REQUEST_METHOD': 'POST',
+                'CONTENT_TYPE': content_type,
+                'CONTENT_LENGTH': content_length,
+            }
+            
+            # Read post data
+            post_data = self.rfile.read(content_length)
+            
+            # Parse form data using our custom FieldStorage class
+            if content_type == 'application/json':
+                # Direct JSON parsing
+                data = json.loads(post_data.decode('utf-8'))
             else:
-                # Handle form data
-                form_data = parse_qs(post_data)
+                # URL-encoded form data parsing
+                form_data = parse_qs(post_data.decode('utf-8'))
                 data = {}
                 for key, values in form_data.items():
                     data[key] = values[0] if values else ''
