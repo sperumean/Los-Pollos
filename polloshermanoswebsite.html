@@ -239,11 +239,51 @@
         <main class="main-content">
             <div class="video-container">
                 <video controls aria-label="Los Pollos Hermanos promotional video">
-                    <source src="Los Pollos HermanosTaste the Family!.mp4" type="video/mp4">
+                    <source src="./Los Pollos HermanosTaste the Family!.mp4" type="video/mp4">
+                    <source src="./videos/Los Pollos HermanosTaste the Family!.mp4" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
                 <p class="video-caption">Discover the Los Pollos Hermanos experience</p>
+                <div class="video-troubleshoot">
+                    <p>Having trouble viewing the video? <button onclick="checkVideoPath()" class="help-button">Click here for help</button></p>
+                </div>
             </div>
+            
+            <script>
+                // Function to check video path and help troubleshoot
+                function checkVideoPath() {
+                    const video = document.querySelector('video');
+                    const sources = video.querySelectorAll('source');
+                    let message = "Video troubleshooting information:\n\n";
+                    
+                    message += "Current video sources tried:\n";
+                    sources.forEach(source => {
+                        message += "- " + source.src + "\n";
+                    });
+                    
+                    message += "\nSuggestions:\n";
+                    message += "1. Make sure the video file exists in the same folder as this HTML file\n";
+                    message += "2. Check if the filename exactly matches 'Los Pollos HermanosTaste the Family!.mp4' (including spaces)\n";
+                    message += "3. Try renaming the file to something simpler like 'promo.mp4' and update the HTML\n";
+                    
+                    alert(message);
+                }
+                
+                // Check if video loads correctly
+                document.addEventListener('DOMContentLoaded', function() {
+                    const video = document.querySelector('video');
+                    
+                    video.addEventListener('error', function() {
+                        const troubleshoot = document.querySelector('.video-troubleshoot');
+                        troubleshoot.style.display = 'block';
+                    });
+                    
+                    video.addEventListener('loadeddata', function() {
+                        const troubleshoot = document.querySelector('.video-troubleshoot');
+                        troubleshoot.style.display = 'none';
+                    });
+                });
+            </script>
             
             <section class="intro">
                 <h2>Enjoy Our Delicious Meals</h2>
