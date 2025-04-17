@@ -241,7 +241,6 @@
                 <video controls poster="/api/placeholder/640/360" aria-label="Los Pollos Hermanos promotional video" id="promo-video">
                     <source src="promo.mp4" type="video/mp4">
                     <source src="./promo.mp4" type="video/mp4">
-                    <source src="./videos/promo.mp4" type="video/mp4">
                     <source src="../promo.mp4" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
@@ -271,17 +270,31 @@
                         message += "- " + source.src + "\n";
                     });
                     
-                    message += "\nPossible issues and solutions:\n";
-                    message += "1. File path: Make sure the video file 'promo.mp4' exists in the same folder as this HTML file\n";
-                    message += "2. File format: Ensure the video is encoded in a web-compatible format (H.264 codec is recommended)\n";
-                    message += "3. MIME types: Your server might need to be configured to serve MP4 files correctly\n";
-                    message += "4. Virtual Machine limitations: Some VMs restrict media playback or lack necessary codecs\n\n";
-                    message += "5. Try opening the HTML file using a local web server instead of directly from the file system\n";
+                    message += "\nWindows Path Issue Detected!\n";
+                    message += "Your files appear to be in: C:\\Users\\Admin\\Downloads\\PortableGit\\Los-Pollos\n\n";
+                    
+                    message += "Suggested Solutions:\n";
+                    message += "1. Make sure promo.mp4 is in the EXACT same folder as your HTML file\n";
+                    message += "2. Use a local web server instead of opening the file directly\n";
+                    message += "   - Install Python and run: python -m http.server\n";
+                    message += "   - Then access via: http://localhost:8000\n";
+                    message += "3. Move both your HTML and video files to a simpler path without spaces\n";
+                    message += "4. Try embedding the video using an iframe with absolute path instead\n";
                     
                     // Show fallback content
                     document.querySelector('.video-fallback').style.display = 'block';
                     
                     alert(message);
+                    
+                    // Try to provide more helpful information about the file location
+                    try {
+                        // Show the current page's actual URL path
+                        console.log("Current document URL:", document.URL);
+                        message += "\nDocument location: " + document.URL;
+                        alert("Additional debugging info:\n" + message);
+                    } catch(e) {
+                        console.error("Error getting additional path info:", e);
+                    }
                 }
                 
                 // Enhanced video error handling
@@ -315,6 +328,7 @@
                         }
                     }, 3000);
                 });
+            </script>
             </script>
             
             <section class="intro">
