@@ -238,21 +238,31 @@
         
         <main class="main-content">
             <div class="video-container">
-                <video controls aria-label="Los Pollos Hermanos promotional video">
-                    <source src="./Los Pollos HermanosTaste the Family!.mp4" type="video/mp4">
-                    <source src="./videos/Los Pollos HermanosTaste the Family!.mp4" type="video/mp4">
+                <video controls poster="/api/placeholder/640/360" aria-label="Los Pollos Hermanos promotional video" id="promo-video">
+                    <source src="promo.mp4" type="video/mp4">
+                    <source src="./promo.mp4" type="video/mp4">
+                    <source src="./videos/promo.mp4" type="video/mp4">
+                    <source src="../promo.mp4" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
                 <p class="video-caption">Discover the Los Pollos Hermanos experience</p>
                 <div class="video-troubleshoot">
                     <p>Having trouble viewing the video? <button onclick="checkVideoPath()" class="help-button">Click here for help</button></p>
                 </div>
+                <div class="video-fallback" style="display: none; margin-top: 20px;">
+                    <p>While we're fixing the video, enjoy our image gallery instead:</p>
+                    <div class="image-gallery" style="display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 15px;">
+                        <img src="/api/placeholder/300/200" alt="Los Pollos Hermanos Restaurant" style="border-radius: 8px;">
+                        <img src="/api/placeholder/300/200" alt="Our Famous Chicken" style="border-radius: 8px;">
+                        <img src="/api/placeholder/300/200" alt="Happy Customers" style="border-radius: 8px;">
+                    </div>
+                </div>
             </div>
             
             <script>
                 // Function to check video path and help troubleshoot
                 function checkVideoPath() {
-                    const video = document.querySelector('video');
+                    const video = document.getElementById('promo-video');
                     const sources = video.querySelectorAll('source');
                     let message = "Video troubleshooting information:\n\n";
                     
@@ -261,27 +271,49 @@
                         message += "- " + source.src + "\n";
                     });
                     
-                    message += "\nSuggestions:\n";
-                    message += "1. Make sure the video file exists in the same folder as this HTML file\n";
-                    message += "2. Check if the filename exactly matches 'Los Pollos HermanosTaste the Family!.mp4' (including spaces)\n";
-                    message += "3. Try renaming the file to something simpler like 'promo.mp4' and update the HTML\n";
+                    message += "\nPossible issues and solutions:\n";
+                    message += "1. File path: Make sure the video file 'promo.mp4' exists in the same folder as this HTML file\n";
+                    message += "2. File format: Ensure the video is encoded in a web-compatible format (H.264 codec is recommended)\n";
+                    message += "3. MIME types: Your server might need to be configured to serve MP4 files correctly\n";
+                    message += "4. Virtual Machine limitations: Some VMs restrict media playback or lack necessary codecs\n\n";
+                    message += "5. Try opening the HTML file using a local web server instead of directly from the file system\n";
+                    
+                    // Show fallback content
+                    document.querySelector('.video-fallback').style.display = 'block';
                     
                     alert(message);
                 }
                 
-                // Check if video loads correctly
+                // Enhanced video error handling
                 document.addEventListener('DOMContentLoaded', function() {
-                    const video = document.querySelector('video');
+                    const video = document.getElementById('promo-video');
+                    const troubleshoot = document.querySelector('.video-troubleshoot');
+                    const fallback = document.querySelector('.video-fallback');
                     
-                    video.addEventListener('error', function() {
-                        const troubleshoot = document.querySelector('.video-troubleshoot');
+                    // Initial state - show troubleshoot button
+                    troubleshoot.style.display = 'block';
+                    
+                    // Try to load the video
+                    video.addEventListener('loadeddata', function() {
+                        console.log('Video loaded successfully');
+                        troubleshoot.style.display = 'none';
+                        fallback.style.display = 'none';
+                    });
+                    
+                    // Handle video error
+                    video.addEventListener('error', function(e) {
+                        console.error('Video error:', e);
                         troubleshoot.style.display = 'block';
                     });
                     
-                    video.addEventListener('loadeddata', function() {
-                        const troubleshoot = document.querySelector('.video-troubleshoot');
-                        troubleshoot.style.display = 'none';
-                    });
+                    // Additional check after a delay
+                    setTimeout(function() {
+                        // If video hasn't loaded or has error
+                        if (video.readyState === 0) {
+                            console.log('Video not loading after timeout');
+                            troubleshoot.style.display = 'block';
+                        }
+                    }, 3000);
                 });
             </script>
             
