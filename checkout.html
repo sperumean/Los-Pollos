@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Los Pollos Hermanos</title>
+    <style>
+        :root {
+            --primary-color: #f9c922;
+            --secondary-color: #d62300;
+            --accent-color: #1a5276;
+            --text-color: #333;
+            --light-color: #fff;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: var(--light-color);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px 0;
+            border-radius: 8px 8px 0 0;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            max-width: 200px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+
+        h1, h2, h3 {
+            color: var(--secondary-color);
+        }
+
+        .checkout-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .checkout-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .order-summary, .customer-info {
+            background-color: var(--light-color);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .checkout-items {
+            margin-bottom: 20px;
+        }
+
+        .checkout-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .item-details {
+            flex-grow: 1;
+        }
+
+        .item-name {
+            font-weight: bold;
+        }
+
+        .addon-details {
+            margin-left: 20px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .totals {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #ddd;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .grand-total {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: var(--secondary-color);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .place-order-btn {
+            display: block;
+            width: 100%;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 4px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        .place-order-btn:hover {
+            background-color: #218838;
+        }
+
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .nav-link {
+            color: var(--light-color);
+            background-color: var(--secondary-color);
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .nav-link:hover {
+            background-color: #b91e00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="polloshermanoslogo.png" alt="Los Pollos Hermanos Logo" class="logo">
+            <h1>Checkout</h1>
+        </div>
+
+        <div class="nav-links">
+            <a href="index.html" class="nav-link">Home</a>
+            <a href="cart.html" class="nav-link">Back to Cart</a>
+        </div>
+
+        <div class="checkout-container">
+            <div class="order-summary">
+                <h2>Order Summary</h2>
+                <div id="checkout-items" class="checkout-items">
+                    <!-- Order items will be loaded dynamically -->
+                    <p>Loading order details...</p>
+                </div>
+
+                <div class="totals">
+                    <div class="total-row">
+                        <span>Subtotal:</span>
+                        <span id="checkout-subtotal">$0.00</span>
+                    </div>
+                    <div class="total-row">
+                        <span>Tax (10%):</span>
+                        <span id="checkout-tax">$0.00</span>
+                    </div>
+                    <div class="total-row grand-total">
+                        <span>Total:</span>
+                        <span id="checkout-total">$0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="customer-info">
+                <h2>Customer Information</h2>
+                <form id="checkout-form">
+                    <div class="form-group">
+                        <label for="first-name">First Name</label>
+                        <input type="text" id="first-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="last-name">Last Name</label>
+                        <input type="text" id="last-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="address">Delivery Address</label>
+                        <textarea id="address" rows="4" required></textarea>
+                    </div>
+
+                    <button type="submit" class="place-order-btn">Place Order</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            const checkoutItemsContainer = document.getElementById('checkout-items');
+            const subtotalElement = document.getElementById('checkout-subtotal');
+            const taxElement = document.getElementById('checkout-tax');
+            const totalElement = document.getElementById('checkout-total');
+            const checkoutForm = document.getElementById('checkout-form');
+            
+            // Get order ID from localStorage
+            const orderId = localStorage.getItem('currentOrderId');
+            
+            if (!orderId) {
+                alert('No active order found. Please add items to your cart first.');
+                window.location.href = 'order.html';
+                return;
+            }
+            
+            // Fetch cart data from server
+            try {
+                const response = await fetch(`/api/cart/${orderId}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.status === 'success' && data.cart_items && data.cart_items.length > 0) {
+                    // Render order items
+                    renderOrderItems(data.cart_items);
+                    
+                    // Update totals
+                    subtotalElement.textContent = `$${data.subtotal.toFixed(2)}`;
+                    taxElement.textContent = `$${data.tax.toFixed(2)}`;
+                    totalElement.textContent = `$${data.total.toFixed(2)}`;
+                } else {
+                    alert('Your cart is empty. Please add items before checkout.');
+                    window.location.href = 'order.html';
+                }
+            } catch (error) {
+                console.error('Error fetching cart data:', error);
+                checkoutItemsContainer.innerHTML = `<p>Error loading order details: ${error.message}</p>`;
+            }
+            
+            // Form submission handler
+            checkoutForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const firstName = document.getElementById('first-name').value;
+                const lastName = document.getElementById('last-name').value;
+                const email = document.getElementById('email').value;
+                const address = document.getElementById('address').value;
+                
+                try {
+                    const response = await fetch('/api/cart/checkout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            order_id: orderId,
+                            first_name: firstName,
+                            last_name: lastName,
+                            email: email,
+                            address: address,
+                            subtotal: parseFloat(subtotalElement.textContent.replace('$', '')),
+                            tax: parseFloat(taxElement.textContent.replace('$', '')),
+                            total: parseFloat(totalElement.textContent.replace('$', ''))
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        // Clear local storage
+                        localStorage.removeItem('currentOrderId');
+                        localStorage.removeItem('cart');
+                        
+                        // Show success message and redirect
+                        alert('Order placed successfully! Thank you for your order.');
+                        window.location.href = 'index.html';
+                    } else {
+                        throw new Error(data.message || 'Failed to place order');
+                    }
+                } catch (error) {
+                    console.error('Error placing order:', error);
+                    alert(`Error placing order: ${error.message}`);
+                }
+            });
+            
+            // Function to render order items
+            function renderOrderItems(items) {
+                checkoutItemsContainer.innerHTML = '';
+                
+                items.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'checkout-item';
+                    
+                    // Create addon HTML if any
+                    let addonsHtml = '';
+                    if (item.addons && item.addons.length > 0) {
+                        addonsHtml = '<div class="addon-details">';
+                        item.addons.forEach(addon => {
+                            addonsHtml += `<div>+ ${addon.name} ($${parseFloat(addon.price).toFixed(2)})</div>`;
+                        });
+                        addonsHtml += '</div>';
+                    }
+                    
+                    itemElement.innerHTML = `
+                        <div class="item-details">
+                            <div class="item-name">${item.name} x${item.quantity}</div>
+                            ${addonsHtml}
+                        </div>
+                        <div class="item-total">$${item.item_total.toFixed(2)}</div>
+                    `;
+                    
+                    checkoutItemsContainer.appendChild(itemElement);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
