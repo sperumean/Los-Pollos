@@ -633,7 +633,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             db = DatabaseConnection()
             conn = db.connect()
             cursor = conn.cursor(dictionary=True, buffered=True)
-
+    
             # First verify the order exists
             cursor.execute("""
                 SELECT order_id, status 
@@ -646,9 +646,9 @@ class RequestHandler(BaseHTTPRequestHandler):
                 print(f"Order {order_id} not found")
                 self.send_error(404, f"Order {order_id} not found")
                 return
-
+    
             print(f"Found order: {order}")
-
+    
             # Get order items with product information
             cursor.execute("""
                 SELECT 
@@ -665,10 +665,10 @@ class RequestHandler(BaseHTTPRequestHandler):
             
             items = cursor.fetchall()
             print(f"Found {len(items)} items in cart")
-
+    
             cart_items = []
             subtotal = 0
-
+    
             for item in items:
                 print(f"Processing item: {item}")
                 # Calculate item base cost
@@ -687,7 +687,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 
                 addons = cursor.fetchall()
                 print(f"Found {len(addons)} addons for item {item['order_item_id']}")
-
+    
                 # Calculate addons cost
                 addon_list = []
                 for addon in addons:
@@ -698,21 +698,22 @@ class RequestHandler(BaseHTTPRequestHandler):
                         'name': addon['name'],
                         'price': addon_price
                     })
-
+    
                 cart_items.append({
                     'order_item_id': item['order_item_id'],
                     'name': item['name'],
                     'quantity': item['quantity'],
                     'unit_price': float(item['unit_price']),
+                    'product_id': item['product_id'],  # Make sure this is included
                     'addons': addon_list,
                     'item_total': item_subtotal
                 })
-
+    
                 subtotal += item_subtotal
-
+    
             tax = round(subtotal * 0.1, 2)  # 10% tax, rounded to 2 decimal places
             total = round(subtotal + tax, 2)
-
+    
             response = {
                 'status': 'success',
                 'cart_items': cart_items,
@@ -728,6 +729,8 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
+            
+            # Use the DecimalEncoder for proper JSON serialization
             self.wfile.write(json.dumps(response, cls=DecimalEncoder).encode())
             
         except Exception as e:
@@ -740,7 +743,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 'status': 'error',
                 'message': str(e)
             }
-            self.wfile.write(json.dumps(error_response).encode())
+            self.wfile.write(json.dumps(error_response, cls=DecimalEncoder).encode())
             
         finally:
             if 'conn' in locals():
