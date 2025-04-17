@@ -3,82 +3,262 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pollos Hermanos Restaurant</title>
+    <meta name="description" content="Los Pollos Hermanos - Home of the best chicken in Albuquerque">
+    <title>Los Pollos Hermanos Restaurant</title>
     <style>
-        body {
-            background-color: yellow;
-            font-family: Arial, sans-serif;
+        :root {
+            --primary-color: #f9c922;
+            --secondary-color: #d62300;
+            --accent-color: #1a5276;
+            --text-color: #333;
+            --light-color: #fff;
+            --spacing-sm: 10px;
+            --spacing-md: 20px;
+            --spacing-lg: 40px;
         }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: var(--primary-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: var(--spacing-md);
         }
+        
+        .header {
+            background-color: var(--light-color);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: var(--spacing-md) 0;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .header-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
         .logo {
-            display: block;
-            margin: 0 auto;
-            max-width: 100%;
+            max-width: 300px;
             height: auto;
+            margin-bottom: var(--spacing-md);
         }
-        h1, h2 {
-            color: red;
+        
+        h1, h2, h3 {
+            color: var(--secondary-color);
             text-align: center;
+            margin-bottom: var(--spacing-md);
         }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        
+        h3 {
+            font-size: 1.5rem;
+        }
+        
+        .tagline {
+            font-style: italic;
+            font-size: 1.5rem;
+            margin-bottom: var(--spacing-lg);
+            color: var(--accent-color);
+        }
+        
         nav {
-            text-align: center;
-            margin-bottom: 20px;
+            background-color: var(--secondary-color);
+            padding: var(--spacing-md);
+            border-radius: 4px;
+            margin-top: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
         }
+        
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+        }
+        
         .nav-link {
-            color: red;
-            font-size: 24px;
+            color: var(--light-color);
+            font-size: 1.2rem;
             text-decoration: none;
-            margin: 0 10px;
+            padding: var(--spacing-sm);
+            border-radius: 4px;
+            transition: all 0.3s ease;
         }
-        .nav-link:hover {
-            text-decoration: underline;
+        
+        .nav-link:hover, .nav-link:focus {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
         }
-        .intro {
-            text-align: center;
-            margin-top: 40px;
+        
+        .main-content {
+            background-color: var(--light-color);
+            padding: var(--spacing-lg);
+            border-radius: 0 0 8px 8px;
         }
-        .intro h1 {
-            font-size: 48px;
-            margin-bottom: 20px;
-        }
+        
         .video-container {
             display: flex;
             flex-direction: column;
             align-items: center;
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .video-container video {
+            width: 100%;
+            max-width: 700px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .video-caption {
+            margin-top: var(--spacing-md);
+            font-size: 1.2rem;
+            color: var(--accent-color);
+        }
+        
+        .intro {
+            text-align: center;
+            margin-top: var(--spacing-lg);
+            padding: var(--spacing-lg);
+            background-color: rgba(249, 201, 34, 0.2);
+            border-radius: 8px;
+        }
+        
+        .intro h1 {
+            font-size: 3rem;
+            margin-bottom: var(--spacing-md);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .intro-text {
+            font-size: 1.2rem;
+            margin-bottom: var(--spacing-md);
+            line-height: 1.8;
+        }
+        
+        .highlight {
+            font-weight: 700;
+            color: var(--secondary-color);
+            font-size: 1.4rem;
+            display: block;
+            margin-top: var(--spacing-md);
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background-color: var(--secondary-color);
+            color: var(--light-color);
+            padding: 15px 30px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-top: var(--spacing-lg);
+            transition: all 0.3s ease;
+        }
+        
+        .cta-button:hover, .cta-button:focus {
+            background-color: var(--accent-color);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        footer {
+            margin-top: var(--spacing-lg);
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--accent-color);
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .nav-links {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .nav-link {
+                width: 100%;
+                text-align: center;
+                padding: var(--spacing-md);
+            }
+            
+            .intro h1 {
+                font-size: 2.2rem;
+            }
+            
+            .intro-text {
+                font-size: 1rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <img src="polloshermanoslogo.png" alt="Pollos Hermanos Logo" class="logo">
-        <h1>Bienvenidos a Los Pollos Hermanos Restaurant</h1>
-        <h2>Taste the Family!</h2>
+        <header class="header">
+            <div class="header-content">
+                <img src="polloshermanoslogo.png" alt="Los Pollos Hermanos Logo" class="logo">
+                <h1>Los Pollos Hermanos</h1>
+                <p class="tagline">Taste the Family!</p>
+            </div>
+        </header>
+        
         <nav>
-            <a href="About.html" class="nav-link">About</a>
-            <a href="Menu.html" class="nav-link">Menu</a>
-            <a href="contact.html" class="nav-link">Contact Us</a>
-            <a href="PollosHermanosShoppingCart.html" class="nav-link">Order Here</a>
-            <a href="LPH_Chatbot.html" class="nav-link">Try Out Chatbox</a>
-            <a href="Services.html" class="nav-link">Services</a>
+            <div class="nav-links">
+                <a href="about.html" class="nav-link">About Us</a>
+                <a href="menu.html" class="nav-link">Our Menu</a>
+                <a href="contact.html" class="nav-link">Contact</a>
+                <a href="order.html" class="nav-link">Order Online</a>
+                <a href="chatbot.html" class="nav-link">Chat With Us</a>
+                <a href="services.html" class="nav-link">Services</a>
+            </div>
         </nav>
-        <div class="video-container">
-            <video width="620" height="440" controls>
-                <source src="Los Pollos HermanosTaste the Family!.mp4" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
-            <h2>Play me :)</h2>
-        </div>
-        <div class="intro">
-            <h1>Enjoy Our<br>Delicious Meals</h1>
-            <h2>The finest ingredients are brought together with love and care.<br>
-                YES, the old ways are still the best way at Los Pollos Hermanos.<br>
-                <b>ONE TASTE...AND YOU'LL KNOW.</b>
-            </h2>
-        </div>
+        
+        <main class="main-content">
+            <div class="video-container">
+                <video controls aria-label="Los Pollos Hermanos promotional video">
+                    <source src="Los Pollos HermanosTaste the Family!.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <p class="video-caption">Discover the Los Pollos Hermanos experience</p>
+            </div>
+            
+            <section class="intro">
+                <h2>Enjoy Our Delicious Meals</h2>
+                <p class="intro-text">
+                    The finest ingredients are brought together with love and care.
+                    <br>YES, the old ways are still the best way at Los Pollos Hermanos.
+                </p>
+                <p class="highlight">ONE TASTE...AND YOU'LL KNOW.</p>
+                <a href="menu.html" class="cta-button">View Our Menu</a>
+            </section>
+        </main>
+        
+        <footer>
+            <p>&copy; 2025 Los Pollos Hermanos. All rights reserved.</p>
+        </footer>
     </div>
 </body>
 </html>
