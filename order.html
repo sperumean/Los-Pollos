@@ -643,8 +643,17 @@
         }
         
         // Function to update cart on server
+        // In order.html, update the updateCartOnServer function:
+        
         async function updateCartOnServer(productId, quantity, addons) {
             try {
+                console.log('Sending cart update to server:', {
+                    order_id: orderId || 'new',
+                    product_id: productId,
+                    quantity: quantity,
+                    addons: addons
+                });
+                
                 const response = await fetch('/api/cart/add', {
                     method: 'POST',
                     headers: {
@@ -659,21 +668,20 @@
                 });
                 
                 const data = await response.json();
+                console.log('Server response:', data);
                 
                 if (data.status === 'success') {
-                    console.log('Cart updated successfully');
-                    
                     // If new order, store order ID
                     if (!orderId && data.order_id) {
                         orderId = data.order_id;
                         localStorage.setItem('currentOrderId', orderId);
+                        console.log('New order ID saved:', orderId);
                     }
                 } else {
                     console.error('Error updating cart:', data.message);
                 }
             } catch (error) {
                 console.error('Error sending data to server:', error);
-                // Still show the item in local cart even if server update fails
             }
         }
         
@@ -822,13 +830,21 @@
         }
         
         // Checkout button event handler
+        // Checkout button event handler
         document.getElementById('checkout-btn').addEventListener('click', () => {
             if (cart.length === 0) {
                 alert('Your cart is empty!');
                 return;
             }
             
-            window.location.href = 'PollosHermanosCheckoutPage.html';
+            // Make sure we save the cart to localStorage before redirecting
+            saveCart();
+            
+            // Log the current orderId to verify it's set
+            console.log('Redirecting to cart with orderId:', orderId);
+            
+            // Redirect to cart.html instead of PollosHermanosCheckoutPage.html
+            window.location.href = 'cart.html';
         });
         
         // Initialize page
