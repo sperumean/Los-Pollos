@@ -544,32 +544,37 @@ class RequestHandler(BaseHTTPRequestHandler):
             db = DatabaseConnection()
             conn = db.connect()
             cursor = conn.cursor(buffered=True)
-
+    
             conn.start_transaction()
-
+    
             try:
-                # Check if order exists
-                if cart_data.get('order_id'):
-                    cursor.execute("""
-                        SELECT order_id FROM orders WHERE order_id = %s
-                    """, (cart_data['order_id'],))
-                    if not cursor.fetchone():
-                        cursor.execute("""
-                            INSERT INTO orders (order_id, status) 
-                            VALUES (%s, 'pending')
-                        """, (cart_data['order_id'],))
-                else:
+                # Check if we need to create a new order
+                if cart_data.get('order_id') == 'new' or not cart_data.get('order_id'):
+                    # Create a new order
                     cursor.execute("""
                         INSERT INTO orders (status) VALUES ('pending')
                     """)
                     cart_data['order_id'] = cursor.lastrowid
-                    print(f"Created new order ID: {cart_data['order_id']}")
+                    print(f"Created new order with ID: {cart_data['order_id']}")
+                else:
+                    # Check if existing order exists
+                    cursor.execute("""
+                        SELECT order_id FROM orders WHERE order_id = %s
+                    """, (cart_data['order_id'],))
+                    if not cursor.fetchone():
+                        # Order doesn't exist, create it with the specified ID
+                        cursor.execute("""
+                            INSERT INTO orders (order_id, status) 
+                            VALUES (%s, 'pending')
+                        """, (cart_data['order_id'],))
+    
                 # Get correct product price from database
                 cursor.execute("""
                     SELECT base_price FROM products WHERE product_id = %s
                 """, (cart_data['product_id'],))
                 product_price = cursor.fetchone()[0]
                 print(f"Product base price: {product_price}")  # Debug print
+
 
                 # Check if item already exists in cart
                 cursor.execute("""
