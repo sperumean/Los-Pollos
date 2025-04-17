@@ -277,7 +277,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         print(f"\nHandling GET request for path: {self.path}")
         parsed_path = urlparse(self.path)
         path = parsed_path.path
-
+    
         # API endpoints
         if path == '/api/products':
             self.handle_get_products()
@@ -307,6 +307,30 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.serve_file(path[1:], 'video/webm')
         elif path.endswith('.ogg'):
             self.serve_file(path[1:], 'video/ogg')
+        elif path.startswith('/api/placeholder/'):
+            try:
+                parts = path.split('/')
+                if len(parts) >= 4:
+                    width = int(parts[3])
+                    height = int(parts[4]) if len(parts) > 4 else width
+                    
+                    # Generate a simple colored rectangle as a placeholder
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'image/svg+xml')
+                    self.end_headers()
+                    
+                    # Create a simple SVG placeholder
+                    svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
+                        <rect width="{width}" height="{height}" fill="#cccccc"/>
+                        <text x="{width/2}" y="{height/2}" font-family="Arial" font-size="16" fill="#666666" text-anchor="middle" alignment-baseline="middle">{width}x{height}</text>
+                    </svg>'''
+                    
+                    self.wfile.write(svg.encode())
+                    return
+            except Exception as e:
+                print(f"Error creating placeholder image: {str(e)}")
+                self.send_error(500, f"Internal server error: {str(e)}")
+                return
         else:
             print(f"Unsupported path: {path}")
             self.send_error(404)
