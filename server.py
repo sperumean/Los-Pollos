@@ -1,4 +1,3 @@
-
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 import mysql.connector
@@ -41,14 +40,58 @@ class DatabaseConnection:
 class RequestHandler(BaseHTTPRequestHandler):
     def serve_file(self, file_path, content_type):
         try:
+            # Print debugging information
+            print(f"Attempting to serve file: {file_path} with content type: {content_type}")
+            
+            # Check if file exists
+            if not os.path.exists(file_path):
+                print(f"File not found: {file_path}")
+                alt_paths = [
+                    # Try common variations of the path
+                    file_path.replace('\\', '/'),
+                    os.path.basename(file_path),
+                    os.path.join('..', file_path)
+                ]
+                
+                # Print alternative paths being checked
+                print(f"Checking alternative paths: {alt_paths}")
+                
+                for alt_path in alt_paths:
+                    if os.path.exists(alt_path):
+                        print(f"Found file at alternative path: {alt_path}")
+                        file_path = alt_path
+                        break
+                else:
+                    print("File not found in any location")
+                    self.send_error(404, "File not found")
+                    return
+            
+            # Get file size for binary files
+            file_size = os.path.getsize(file_path)
+            print(f"File size: {file_size} bytes")
+            
             with open(file_path, 'rb') as f:
                 content = f.read()
                 self.send_response(200)
-                self.send_header('Content-Type', f'{content_type}; charset=utf-8')
+                
+                # Special handling for video files - set proper MIME type and additional headers
+                if file_path.endswith('.mp4'):
+                    self.send_header('Content-Type', 'video/mp4')
+                    self.send_header('Accept-Ranges', 'bytes')
+                    self.send_header('Content-Length', str(file_size))
+                    self.send_header('Cache-Control', 'public, max-age=86400')
+                else:
+                    self.send_header('Content-Type', f'{content_type}; charset=utf-8')
+                
                 self.end_headers()
                 self.wfile.write(content)
+                print(f"Successfully served file: {file_path}")
         except FileNotFoundError:
+            print(f"FileNotFoundError: {file_path}")
             self.send_error(404, "File not found")
+        except Exception as e:
+            print(f"Error serving file {file_path}: {str(e)}")
+            self.send_error(500, f"Internal server error: {str(e)}")
 
     def do_OPTIONS(self):
         self.send_response(200)
@@ -58,6 +101,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+        print(f"\nHandling GET request for path: {self.path}")
         parsed_path = urlparse(self.path)
         path = parsed_path.path
 
@@ -69,7 +113,8 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.handle_get_cart(order_id)
         # Static file serving
         elif path == '/':
-            self.serve_file('contact.html', 'text/html')
+            # Serve index.html as the default
+            self.serve_file('index.html', 'text/html')
         elif path.endswith('.html'):
             file_path = path[1:]
             self.serve_file(file_path, 'text/html')
@@ -81,9 +126,19 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.serve_file(path[1:], 'image/png')
         elif path.endswith('.jpg') or path.endswith('.jpeg'):
             self.serve_file(path[1:], 'image/jpeg')
+        elif path.endswith('.mp4'):
+            # Handle video files
+            print(f"Serving MP4 file: {path[1:]}")
+            self.serve_file(path[1:], 'video/mp4')
+        elif path.endswith('.webm'):
+            self.serve_file(path[1:], 'video/webm')
+        elif path.endswith('.ogg'):
+            self.serve_file(path[1:], 'video/ogg')
         else:
+            print(f"Unsupported path: {path}")
             self.send_error(404)
 
+    # [Rest of the handler methods remain unchanged]
     def do_POST(self):
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
@@ -103,6 +158,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         else:
             self.send_error(404)
 
+    # [Include all your existing handler methods here...]
     def handle_get_products(self):
         try:
             db = DatabaseConnection()
@@ -140,9 +196,8 @@ class RequestHandler(BaseHTTPRequestHandler):
                 conn.close()
                 
         self.wfile.write(json.dumps(response).encode())
-
-
-
+    
+    # [Include the rest of your handler methods here...]
     def handle_cart_remove(self):
         content_length = int(self.headers.get('Content-Length', 0))
         post_data = self.rfile.read(content_length)
@@ -284,9 +339,6 @@ class RequestHandler(BaseHTTPRequestHandler):
                 conn.close()
                 
         self.wfile.write(json.dumps(response).encode())
-
-
-
 
     def handle_cart_add(self): 
         content_length = int(self.headers.get('Content-Length', 0))
@@ -523,7 +575,6 @@ class RequestHandler(BaseHTTPRequestHandler):
         finally:
             if 'conn' in locals():
                 conn.close()
-
 
     def handle_contact_form(self):
         print("\n=== Contact Form Submission ===")
