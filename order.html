@@ -848,6 +848,7 @@
         });
         
         // Initialize page
+        // After loading cart from localStorage in the DOMContentLoaded event listener
         document.addEventListener('DOMContentLoaded', async () => {
             // Check server status first
             await checkServerStatus();
@@ -857,6 +858,36 @@
             
             // Load cart from localStorage
             loadCart();
+            
+            // Check if orderId exists, if not create one immediately
+            if (!orderId && cart.length > 0) {
+                console.log("No orderId found but cart has items. Creating a new order...");
+                try {
+                    const response = await fetch('/api/cart/add', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            order_id: 'new',
+                            product_id: cart[0].productId,
+                            quantity: cart[0].quantity,
+                            addons: cart[0].addons || []
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    console.log("Forced order creation response:", data);
+                    
+                    if (data.status === 'success' && data.order_id) {
+                        orderId = data.order_id;
+                        localStorage.setItem('currentOrderId', orderId);
+                        console.log("Successfully created new orderId:", orderId);
+                    }
+                } catch (error) {
+                    console.error("Error creating new order:", error);
+                }
+            }
             
             // Render cart
             renderCart();
