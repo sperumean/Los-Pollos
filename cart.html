@@ -233,6 +233,7 @@
             
             // Get order ID from localStorage
             const orderId = localStorage.getItem('currentOrderId');
+            console.log('Retrieved orderId from localStorage:', orderId);
             
             if (!orderId) {
                 cartItemsContainer.innerHTML = '<div class="empty-cart">Your cart is empty</div>';
@@ -242,21 +243,29 @@
             
             // Fetch cart data from server
             try {
+                console.log('Fetching cart data for orderId:', orderId);
                 const response = await fetch(`/api/cart/${orderId}`);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
-                const data = await response.json();
+                const responseText = await response.text();
+                console.log('Raw response:', responseText);
+                
+                // Try to parse the response
+                const data = JSON.parse(responseText);
+                console.log('Parsed cart data:', data);
                 
                 if (data.status === 'success' && data.cart_items && data.cart_items.length > 0) {
                     // Render cart items
+                    console.log('Rendering cart items:', data.cart_items);
                     renderCartItems(data.cart_items);
                     
                     // Update total
                     cartTotalElement.textContent = `$${data.total.toFixed(2)}`;
                 } else {
+                    console.log('No items in cart or invalid response format');
                     cartItemsContainer.innerHTML = '<div class="empty-cart">Your cart is empty</div>';
                     checkoutBtn.disabled = true;
                 }
@@ -265,6 +274,7 @@
                 cartItemsContainer.innerHTML = `<div class="empty-cart">Error loading cart: ${error.message}</div>`;
                 checkoutBtn.disabled = true;
             }
+            
             
             // Checkout button handler
             checkoutBtn.addEventListener('click', function() {
