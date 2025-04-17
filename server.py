@@ -591,7 +591,26 @@ class RequestHandler(BaseHTTPRequestHandler):
                         product_price  # Use price from database
                     ))
                     order_item_id = cursor.lastrowid
+                # Check if order exists or if a new order is needed
+                if cart_data.get('order_id') == 'new' or not cart_data.get('order_id'):
+                    # Create a new order
+                    cursor.execute("""
+                        INSERT INTO orders (status) VALUES ('pending')
+                    """)
+                    cart_data['order_id'] = cursor.lastrowid
+                    print(f"Created new order ID: {cart_data['order_id']}")
+                elif cart_data.get('order_id'):
+                    # Check if existing order ID is valid
+                    cursor.execute("""
+                        SELECT order_id FROM orders WHERE order_id = %s
+                    """, (cart_data['order_id'],))
+                    if not cursor.fetchone():
+                        cursor.execute("""
+                            INSERT INTO orders (order_id, status) 
+                            VALUES (%s, 'pending')
+                        """, (cart_data['order_id'],))
 
+        
                 # Add new addons
                 if 'addons' in cart_data and cart_data['quantity'] > 0:
                     for addon in cart_data['addons']:
