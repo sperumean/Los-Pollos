@@ -7,16 +7,16 @@ import mimetypes
 import decimal
 from decimal import Decimal
 import email.parser
-import ssl  # Import the SSL module
+import ssl
 
-# Keep your existing DecimalEncoder class
+# Keep your original DecimalEncoder class
 class DecimalEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, decimal.Decimal):
             return float(obj)
         return super(DecimalEncoder, self).default(obj)
 
-# Keep your existing DatabaseConnection class        
+# Keep your original DatabaseConnection class        
 class DatabaseConnection:
     def __init__(self):
         self.config = {
@@ -44,7 +44,7 @@ class DatabaseConnection:
         except Exception as e:
             print("Database connection failed:", str(e))
             raise e
-
+            
 class FieldStorage:
     """Replacement for cgi.FieldStorage that uses urllib and email packages"""
     
@@ -938,38 +938,71 @@ class RedirectHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         self.do_GET()
 
-# Function to generate a self-signed certificate for testing
-def generate_self_signed_cert():
-    from subprocess import Popen, PIPE
+def find_mkcert_files():
+    for file in os.listdir('.'):
+        if file.startswith('localhost') and file.endswith('.pem') and not file.endswith('-key.pem'):
+            cert_file = file
+            key_file = file.replace('.pem', '-key.pem')
+            if os.path.exists(key_file):
+                return cert_file, key_file
+    return None, None
+
+def run(server_class=HTTPServer, handler_class=RequestHandler, port=443):
+    server_address = ('', port)
+    httpd = server_class(server_address, handler_class)
     
-    # Check if OpenSSL is available
+    print(f"Looking for mkcert certificate files...")
+    cert_file, key_file = find_mkcert_files()
+    
+    if cert_file and key_file:
+        print(f"Found mkcert certificates: {cert_file}, {key_file}")
+    else:
+        print("No mkcert certificates found in current directory.")
+        print("Please run 'mkcert localhost 127.0.0.1 ::1' to generate them.")
+        print("Falling back to insecure HTTP server.")
+        httpd.serve_forever()
+        return
+    
+    # Set up SSL context
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    
     try:
-        process = Popen(['openssl', 'version'], stdout=PIPE, stderr=PIPE)
-        stdout, stderr = process.communicate()
-        if process.returncode != 0:
-            print("OpenSSL not found. Please install OpenSSL and add it to your PATH.")
-            return False
-    except FileNotFoundError:
-        print("OpenSSL not found. Please install OpenSSL and add it to your PATH.")
-        return False
+        context.load_cert_chain(certfile=cert_file, keyfile=key_file)
+        
+        # Wrap the socket with the SSL context
+        httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
+        
+        print(f"Starting secure server on port {port}...")
+        
+        # Add HTTP redirect server
+        from threading import Thread
+        
+        def start_redirect_server():
+            redirect_httpd = HTTPServer(('', 80), RedirectHandler)
+            print(f"Starting HTTP redirect server on port 80...")
+            redirect_httpd.serve_forever()
+        
+        # Start HTTP redirect server in a separate thread
+        Thread(target=start_redirect_server, daemon=True).start()
+        
+        httpd.serve_forever()
+    except Exception as e:
+        print(f"Error starting HTTPS server: {str(e)}")
+        print("Falling back to HTTP server...")
+        httpd = server_class(server_address, handler_class)
+        print(f"Starting HTTP server on port {port}...")
+        httpd.serve_forever()
+
+# Simple HTTP to HTTPS redirect handler
+class RedirectHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(301)
+        new_path = f"https://{self.headers.get('Host', self.server.server_name)}{self.path}"
+        self.send_header('Location', new_path)
+        self.end_headers()
     
-    # Windows openssl commands
-    cmds = [
-        ['openssl', 'genrsa', '-out', 'server.key', '2048'],
-        ['openssl', 'req', '-new', '-key', 'server.key', '-out', 'server.csr', '-subj', '/C=US/ST=State/L=City/O=Organization/CN=localhost'],
-        ['openssl', 'x509', '-req', '-days', '365', '-in', 'server.csr', '-signkey', 'server.key', '-out', 'server.crt']
-    ]
-    
-    for cmd in cmds:
-        process = Popen(cmd, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = process.communicate()
-        if process.returncode != 0:
-            print(f"Error executing: {' '.join(cmd)}")
-            print(f"stderr: {stderr.decode()}")
-            return False
-    
-    print("Self-signed certificate generated successfully!")
-    return True
+    def do_POST(self):
+        self.do_GET()
 
 # Add a function to run the server on port 8443 for testing (doesn't require admin rights)
 def run_test_server():
