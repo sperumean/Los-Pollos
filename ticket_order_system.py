@@ -167,6 +167,80 @@ class PollosHermanosManagementSystem:
                 messagebox.showerror("Database Error", "Lost connection to database and failed to reconnect")
                 return False
 
+
+    def delete_order(self):
+        selected_item = self.orders_tree.selection()
+        if not selected_item:
+            messagebox.showwarning("Warning", "Please select an order to delete")
+            return
+            
+        order_id = self.orders_tree.item(selected_item[0])['values'][0]
+        
+        if not messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete Order #{order_id}?\nThis cannot be undone."):
+            return
+            
+        try:
+            # First ensure we have a good connection
+            if not self.ensure_connection():
+                return
+                
+            # Check and reset transaction state if needed
+            try:
+                if hasattr(self.conn, 'in_transaction') and self.conn.in_transaction:
+                    self.update_status("Resolving existing transaction...", "warning")
+                    if not self.reset_transaction_state():
+                        raise Exception("Failed to reset transaction state")
+            except Exception as reset_error:
+                self.update_status(f"Error resetting transaction: {reset_error}", "error")
+                messagebox.showerror("Transaction Error", "Could not prepare for deletion. Try restarting the application.")
+                return
+                
+            # Begin new transaction
+            self.conn.start_transaction()
+            self.update_status(f"Deleting order #{order_id}...", "info")
+            
+            # Delete add-ons first
+            self.cursor.execute("""
+                DELETE oia FROM order_item_addons oia
+                JOIN order_items oi ON oia.order_item_id = oi.order_item_id
+                WHERE oi.order_id = %s
+            """, (order_id,))
+            
+            # Delete order items
+            self.cursor.execute("""
+                DELETE FROM order_items WHERE order_id = %s
+            """, (order_id,))
+            
+            # Delete order
+            self.cursor.execute("""
+                DELETE FROM orders WHERE order_id = %s
+            """, (order_id,))
+            
+            # Commit transaction
+            self.conn.commit()
+            
+            self.update_status(f"Order #{order_id} deleted successfully", "success")
+            messagebox.showinfo("Success", f"Order #{order_id} has been deleted")
+            self.refresh_order_list()
+            
+        except Exception as e:
+            # Make sure we attempt to rollback
+            try:
+                if hasattr(self.conn, 'in_transaction') and self.conn.in_transaction:
+                    self.conn.rollback()
+                    self.update_status("Transaction rolled back", "warning")
+            except Exception as rollback_error:
+                self.update_status(f"Error rolling back: {rollback_error}", "error")
+                
+            error_msg = f"Failed to delete order: {str(e)}"
+            self.update_status(error_msg, "error")
+            messagebox.showerror("Error", error_msg)
+            
+            # Try to recover database connection if it was lost
+            self.reset_transaction_state()
+
+
+    
     def update_order_status(self):
         selected_item = self.orders_tree.selection()
         if not selected_item:
