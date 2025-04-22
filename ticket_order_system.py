@@ -167,6 +167,51 @@ class PollosHermanosManagementSystem:
                 messagebox.showerror("Database Error", "Lost connection to database and failed to reconnect")
                 return False
 
+    def update_order_status(self):
+        selected_item = self.orders_tree.selection()
+        if not selected_item:
+            messagebox.showwarning("Warning", "Please select an order to update")
+            return
+            
+        order_id = self.orders_tree.item(selected_item[0])['values'][0]
+        
+        # Create update window
+        update_window = tk.Toplevel(self.root)
+        update_window.title(f"Update Order #{order_id} Status")
+        update_window.geometry("300x150")
+        
+        ttk.Label(update_window, text="New Status:").pack(pady=(20, 5))
+        
+        status_combo = ttk.Combobox(update_window, values=["pending", "completed", "delivered", "cancelled"])
+        status_combo.pack(pady=5, padx=20, fill="x")
+    
+        def save_status():
+            new_status = status_combo.get()
+            if not new_status:
+                messagebox.showwarning("Warning", "Please select a status")
+                return
+                
+            try:
+                # Ensure connection
+                if not self.ensure_connection():
+                    messagebox.showerror("Error", "Database connection lost")
+                    update_window.destroy()
+                    return
+                    
+                self.cursor.execute("""
+                    UPDATE orders SET status = %s WHERE order_id = %s
+                """, (new_status, order_id))
+                self.conn.commit()
+                
+                self.update_status(f"Order #{order_id} status updated to {new_status}", "success")
+                messagebox.showinfo("Success", f"Order status updated to {new_status}")
+                update_window.destroy()
+                self.refresh_order_list()
+            except Exception as e:
+                self.update_status(f"Error updating status: {e}", "error")
+                messagebox.showerror("Error", f"Failed to update status: {str(e)}")
+        
+        ttk.Button(update_window, text="Save", command=save_status).pack(pady=20)
     def create_orders_tab(self):
         # Split frame
         left_frame = ttk.Frame(self.orders_tab)
