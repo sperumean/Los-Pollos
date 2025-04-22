@@ -858,9 +858,9 @@ class PollosHermanosManagementSystem:
             self.reset_transaction_state():.2f}" if tax is not None else "$0.00"
                 
             try:
-                total_str = f"${total:.2f}"
+                tax_str = f"${float(tax):.2f}"
             except (ValueError, TypeError):
-                total_str = f"${float(total):.2f}" if total is not None else "$0.00"
+                tax_str = "$0.00" if tax is None else f"${float(tax):.2f}"
             
             ttk.Label(info_frame, text=f"Subtotal: {subtotal_str}").grid(row=4, column=0, sticky="w", padx=5, pady=2)
             ttk.Label(info_frame, text=f"Tax: {tax_str}").grid(row=4, column=1, sticky="w", padx=5, pady=2)
