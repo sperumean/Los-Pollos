@@ -167,7 +167,111 @@ class PollosHermanosManagementSystem:
                 messagebox.showerror("Database Error", "Lost connection to database and failed to reconnect")
                 return False
 
+    def view_ticket_details(self):
+        selected_item = self.tickets_tree.selection()
+        if not selected_item:
+            messagebox.showwarning("Warning", "Please select a ticket to view")
+            return
+            
+        ticket_id = self.tickets_tree.item(selected_item[0])['values'][0]
+        
+        # Create details window
+        details_window = tk.Toplevel(self.root)
+        details_window.title(f"Ticket #{ticket_id} Details")
+        details_window.geometry("500x400")
+        
+        # Ensure database connection
+        if not self.ensure_connection():
+            ttk.Label(details_window, text="Database connection error", foreground="red", font=("", 14, "bold")).pack(pady=50)
+            ttk.Button(details_window, text="Close", command=details_window.destroy).pack()
+            return
+            
+        try:
+            self.update_status(f"Loading details for Ticket #{ticket_id}", "info")
+            
+            # Get ticket info
+            self.cursor.execute("""
+                SELECT * FROM contact_submissions WHERE submission_id = %s
+            """, (ticket_id,))
+            
+            ticket = self.cursor.fetchone()
+            
+            if not ticket:
+                messagebox.showerror("Error", "Ticket information not found")
+                details_window.destroy()
+                return
+            
+            # Display ticket details
+            main_frame = ttk.Frame(details_window, padding=10)
+            main_frame.pack(fill="both", expand=True)
+            
+            # Ticket info
+            ttk.Label(main_frame, text="Ticket Information", font=("", 12, "bold")).grid(row=0, column=0, columnspan=2, sticky="w", pady=10)
+            
+            ttk.Label(main_frame, text="Ticket ID:").grid(row=1, column=0, sticky="w", pady=2)
+            ttk.Label(main_frame, text=ticket[0]).grid(row=1, column=1, sticky="w", pady=2)
+            
+            ttk.Label(main_frame, text="Submission Date:").grid(row=2, column=0, sticky="w", pady=2)
+            date_str = ticket[7].strftime("%Y-%m-%d %H:%M") if ticket[7] is not None else "N/A"
+            ttk.Label(main_frame, text=date_str).grid(row=2, column=1, sticky="w", pady=2)
+            
+            ttk.Label(main_frame, text="Customer Information", font=("", 12, "bold")).grid(row=3, column=0, columnspan=2, sticky="w", pady=(20, 10))
+            
+            ttk.Label(main_frame, text="Name:").grid(row=4, column=0, sticky="w", pady=2)
+            full_name = f"{ticket[1]} {ticket[2]}"
+            ttk.Label(main_frame, text=full_name).grid(row=4, column=1, sticky="w", pady=2)
+            
+            ttk.Label(main_frame, text="Email:").grid(row=5, column=0, sticky="w", pady=2)
+            ttk.Label(main_frame, text=ticket[3]).grid(row=5, column=1, sticky="w", pady=2)
+            
+            ttk.Label(main_frame, text="Country:").grid(row=6, column=0, sticky="w", pady=2)
+            country = ticket[5] if ticket[5] is not None else "N/A"
+            ttk.Label(main_frame, text=country).grid(row=6, column=1, sticky="w", pady=2)
+            
+            ttk.Label(main_frame, text="Ticket Details", font=("", 12, "bold")).grid(row=7, column=0, columnspan=2, sticky="w", pady=(20, 10))
+            
+            ttk.Label(main_frame, text="Service:").grid(row=8, column=0, sticky="w", pady=2)
+            service = ticket[4] if ticket[4] is not None else "N/A"
+            ttk.Label(main_frame, text=service).grid(row=8, column=1, sticky="w", pady=2)
+            
+            ttk.Label(main_frame, text="Subject:").grid(row=9, column=0, sticky="w", pady=2)
+            subject = ticket[6] if ticket[6] is not None else "No subject"
+            ttk.Label(main_frame, text=subject).grid(row=9, column=1, sticky="w", pady=2)
+            
+            # Response section
+            ttk.Label(main_frame, text="Response", font=("", 12, "bold")).grid(row=10, column=0, columnspan=2, sticky="w", pady=(20, 10))
+            
+            response_text = tk.Text(main_frame, height=5, width=50, wrap="word")
+            response_text.grid(row=11, column=0, columnspan=2, sticky="we", pady=5)
+            
+            # Buttons
+            buttons_frame = ttk.Frame(main_frame)
+            buttons_frame.grid(row=12, column=0, columnspan=2, sticky="e", pady=20)
+            
+            ttk.Button(buttons_frame, text="Send Response", command=lambda: self.send_ticket_response(ticket_id, response_text.get("1.0", "end-1c"))).pack(side=tk.LEFT, padx=5)
+            ttk.Button(buttons_frame, text="Close", command=details_window.destroy).pack(side=tk.LEFT, padx=5)
+            
+            # Update status
+            self.update_status(f"Viewing Ticket #{ticket_id}", "info")
+            
+        except Exception as e:
+            error_msg = f"Failed to load ticket details: {str(e)}"
+            self.update_status(error_msg, "error")
+            
+            # Display error in the window
+            error_frame = ttk.Frame(details_window)
+            error_frame.pack(fill="both", expand=True, padx=20, pady=20)
+            
+            ttk.Label(error_frame, text="Error Loading Ticket Details", 
+                     font=("", 14, "bold"), foreground="red").pack(pady=(20, 10))
+            ttk.Label(error_frame, text=error_msg, wraplength=500).pack(pady=10)
+            ttk.Button(error_frame, text="Close", command=details_window.destroy).pack(pady=20)
+            
+            # Try to recover database connection
+            self.reset_transaction_state()
 
+
+    
     def delete_order(self):
         selected_item = self.orders_tree.selection()
         if not selected_item:
