@@ -10,43 +10,162 @@ class PollosHermanosManagementSystem:
         self.root.title("Los Pollos Hermanos Management System")
         self.root.geometry("1000x700")
         
-        # Database connection with UTF-8 charset
-        self.connect_to_database()
+        # Set up error logging and status bar
+        self.setup_status_bar()
         
-        # Create notebook for tabs
-        self.notebook = ttk.Notebook(self.root)
-        self.notebook.pack(fill="both", expand=True)
+        try:
+            # Database connection with UTF-8 charset
+            self.connect_to_database()
+            
+            # Create notebook for tabs
+            self.notebook = ttk.Notebook(self.root)
+            self.notebook.pack(fill="both", expand=True, padx=10, pady=(10, 30))  # Leave space for status bar
+            
+            # Create tabs
+            self.orders_tab = ttk.Frame(self.notebook)
+            self.tickets_tab = ttk.Frame(self.notebook)
+            
+            self.notebook.add(self.orders_tab, text="Orders")
+            self.notebook.add(self.tickets_tab, text="Support Tickets")
+            
+            # Initialize UI components
+            self.create_orders_tab()
+            self.create_tickets_tab()
+            
+            # Refresh data
+            self.refresh_order_list()
+            self.refresh_ticket_list()
+            
+            # Update status
+            self.update_status("System ready")
+        except Exception as e:
+            self.update_status(f"Error initializing system: {str(e)}", "error")
+            messagebox.showerror("Initialization Error", f"Failed to initialize system: {str(e)}")
+    
+    def setup_status_bar(self):
+        """Create a status bar at the bottom of the window"""
+        self.status_bar = ttk.Label(
+            self.root, 
+            text="Initializing...", 
+            relief=tk.SUNKEN, 
+            anchor=tk.W,
+            padding=(5, 2)
+        )
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
         
-        # Create tabs
-        self.orders_tab = ttk.Frame(self.notebook)
-        self.tickets_tab = ttk.Frame(self.notebook)
-        
-        self.notebook.add(self.orders_tab, text="Orders")
-        self.notebook.add(self.tickets_tab, text="Support Tickets")
-        
-        # Initialize UI components
-        self.create_orders_tab()
-        self.create_tickets_tab()
-        
-        # Refresh data
-        self.refresh_order_list()
-        self.refresh_ticket_list()
+    def update_status(self, message, status_type="info"):
+        """Update the status bar with a message"""
+        if hasattr(self, 'status_bar'):
+            self.status_bar.config(text=message)
+            
+            # Set color based on message type
+            if status_type == "error":
+                self.status_bar.config(foreground="red")
+            elif status_type == "success":
+                self.status_bar.config(foreground="green")
+            elif status_type == "warning":
+                self.status_bar.config(foreground="orange")
+            else:
+                self.status_bar.config(foreground="black")
+                
+            # Force update the display
+            self.root.update_idletasks()
 
     def connect_to_database(self):
         try:
+            # Close any existing connection
+            if hasattr(self, 'conn') and hasattr(self.conn, 'is_connected') and self.conn.is_connected():
+                try:
+                    self.cursor.close()
+                    self.conn.close()
+                    print("Closed existing database connection")
+                except Exception as close_error:
+                    print(f"Error closing existing connection: {close_error}")
+            
+            # Create new connection
             self.conn = mysql.connector.connect(
                 host="localhost",
                 user="root",
                 password="W00fW00f#!?",
                 database="walter",
                 charset='utf8mb4',
-                collation='utf8mb4_general_ci'
+                collation='utf8mb4_general_ci',
+                use_pure=True,  # Use pure Python implementation for better error handling
+                autocommit=True,  # Enable autocommit mode
+                get_warnings=True,  # Get warnings from MySQL
+                raise_on_warnings=False,  # Don't raise exceptions for warnings
+                connection_timeout=10,  # 10 second timeout
+                buffered=True  # Use buffered cursors by default
             )
-            self.cursor = self.conn.cursor()
+            
+            # Create cursor
+            self.cursor = self.conn.cursor(buffered=True, dictionary=False)
+            
+            # Test connection with a simple query
+            self.cursor.execute("SELECT 1")
+            self.cursor.fetchone()
+            
             print("Connected to database successfully")
+            if hasattr(self, 'update_status'):
+                self.update_status("Connected to database", "success")
+                
+            return True
         except mysql.connector.Error as e:
-            messagebox.showerror("Database Error", f"Could not connect to database: {str(e)}")
-            exit(1)
+            error_msg = f"Could not connect to database: {str(e)}"
+            print(error_msg)
+            
+            if hasattr(self, 'update_status'):
+                self.update_status(error_msg, "error")
+                
+            messagebox.showerror("Database Error", error_msg)
+            
+            # Don't exit, let the caller handle the error
+            return False
+            
+    def ensure_connection(self):
+        """Check if database connection is active and reconnect if necessary"""
+        try:
+            # First check if connection exists and is connected
+            if not hasattr(self, 'conn'):
+                print("No database connection exists. Creating new connection...")
+                return self.connect_to_database()
+                
+            # Check if connection is still active with a simple query
+            try:
+                # Try a simple query to check connection
+                self.cursor.execute("SELECT 1")
+                self.cursor.fetchone()
+                return True
+            except (mysql.connector.Error, AttributeError) as query_error:
+                print(f"Connection test failed: {query_error}")
+                
+                # Try to check connection status directly
+                try:
+                    if not self.conn.is_connected():
+                        print("Database connection lost. Reconnecting...")
+                        return self.connect_to_database()
+                except Exception as conn_check_error:
+                    print(f"Error checking connection status: {conn_check_error}")
+                    
+                # If we got here, we need to reconnect
+                print("Attempting to reconnect to database...")
+                return self.connect_to_database()
+                
+        except Exception as e:
+            print(f"Error ensuring database connection: {e}")
+            
+            # Final attempt to reconnect
+            try:
+                print("Making final attempt to reconnect...")
+                return self.connect_to_database()
+            except Exception as final_error:
+                print(f"Final reconnection attempt failed: {final_error}")
+                
+                if hasattr(self, 'update_status'):
+                    self.update_status("Database connection lost", "error")
+                    
+                messagebox.showerror("Database Error", "Lost connection to database and failed to reconnect")
+                return False
 
     def create_orders_tab(self):
         # Split frame
@@ -166,6 +285,10 @@ class PollosHermanosManagementSystem:
         for item in self.orders_tree.get_children():
             self.orders_tree.delete(item)
         
+        # Ensure database connection
+        if not self.ensure_connection():
+            return
+            
         try:
             # Get filter value
             status_filter = self.status_filter.get()
@@ -215,6 +338,10 @@ class PollosHermanosManagementSystem:
         # Clear existing items
         for item in self.tickets_tree.get_children():
             self.tickets_tree.delete(item)
+            
+        # Ensure database connection
+        if not self.ensure_connection():
+            return
         
         try:
             # Get filter value
@@ -264,10 +391,31 @@ class PollosHermanosManagementSystem:
         details_window.title(f"Order #{order_id} Details")
         details_window.geometry("700x500")
         
+        # Create a loading indicator
+        loading_frame = ttk.Frame(details_window)
+        loading_frame.pack(fill="both", expand=True)
+        ttk.Label(loading_frame, text="Loading order details...", font=("", 12)).pack(pady=50)
+        progress = ttk.Progressbar(loading_frame, mode="indeterminate")
+        progress.pack(fill="x", padx=50, pady=10)
+        progress.start()
+        
+        # Update the window to show the loading indicator
+        details_window.update()
+        
+        # Ensure database connection
+        if not self.ensure_connection():
+            loading_frame.destroy()
+            ttk.Label(details_window, text="Database connection error", foreground="red", font=("", 14, "bold")).pack(pady=50)
+            ttk.Button(details_window, text="Close", command=details_window.destroy).pack()
+            return
+            
         try:
-            # Get order info
+            self.update_status(f"Loading details for Order #{order_id}", "info")
+            
+            # Get order info - use explicit column selection instead of *
             self.cursor.execute("""
-                SELECT o.*, CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
+                SELECT o.order_id, o.order_date, o.subtotal, o.tax, o.total, o.status, 
+                       CONCAT(IFNULL(c.first_name, ''), ' ', IFNULL(c.last_name, '')) AS customer_name,
                        c.email, c.address
                 FROM orders o
                 LEFT JOIN customers c ON o.customer_id = c.customer_id
@@ -277,14 +425,17 @@ class PollosHermanosManagementSystem:
             order_info = self.cursor.fetchone()
             
             if not order_info:
-                messagebox.showerror("Error", "Order information not found")
-                details_window.destroy()
+                loading_frame.destroy()
+                ttk.Label(details_window, text=f"Order #{order_id} not found", foreground="red", font=("", 14, "bold")).pack(pady=50)
+                ttk.Button(details_window, text="Close", command=details_window.destroy).pack()
+                self.update_status(f"Order #{order_id} not found", "warning")
                 return
-            
-            # Get order items
+                
+            # Get order items with product information
             self.cursor.execute("""
                 SELECT oi.order_item_id, p.name, oi.quantity, oi.unit_price,
-                       (oi.quantity * oi.unit_price) AS item_subtotal
+                       (oi.quantity * oi.unit_price) AS item_subtotal,
+                       p.product_id
                 FROM order_items oi
                 JOIN products p ON oi.product_id = p.product_id
                 WHERE oi.order_id = %s
@@ -292,37 +443,428 @@ class PollosHermanosManagementSystem:
             
             order_items = self.cursor.fetchall()
             
+            # Remove the loading indicator
+            loading_frame.destroy()
+            
             # Create frames
-            info_frame = ttk.LabelFrame(details_window, text="Order Information")
-            info_frame.pack(fill="x", expand=False, padx=10, pady=10)
+            main_frame = ttk.Frame(details_window)
+            main_frame.pack(fill="both", expand=True, padx=10, pady=10)
             
-            items_frame = ttk.LabelFrame(details_window, text="Order Items")
-            items_frame.pack(fill="both", expand=True, padx=10, pady=10)
+            info_frame = ttk.LabelFrame(main_frame, text="Order Information")
+            info_frame.pack(fill="x", expand=False, padx=5, pady=5)
             
-            # Order info
-            order_date = order_info[1].strftime("%Y-%m-%d %H:%M") if order_info[1] is not None else "N/A"
-            status = order_info[5] if order_info[5] is not None else "N/A"
-            subtotal = order_info[2] if order_info[2] is not None else 0
-            tax = order_info[3] if order_info[3] is not None else 0
-            total = order_info[4] if order_info[4] is not None else 0
+            items_frame = ttk.LabelFrame(main_frame, text="Order Items")
+            items_frame.pack(fill="both", expand=True, padx=5, pady=5)
             
-            # Customer info
-            customer_name = order_info[6] if order_info[6] is not None else "Guest Customer"
-            customer_email = order_info[7] if order_info[7] is not None else "N/A"
-            customer_address = order_info[8] if order_info[8] is not None else "N/A"
+            # Extract order information with safe handling
+            try:
+                # Customer info
+                customer_name = order_info[6] if order_info[6] is not None else "Guest Customer"
+                customer_email = order_info[7] if order_info[7] is not None else "N/A"
+                customer_address = order_info[8] if order_info[8] is not None else "N/A"
+                
+                # Order info with safe date handling
+                order_date = None
+                try:
+                    if order_info[1] is not None:
+                        if hasattr(order_info[1], 'strftime'):
+                            order_date = order_info[1].strftime("%Y-%m-%d %H:%M")
+                        else:
+                            order_date = str(order_info[1])
+                    else:
+                        order_date = "N/A"
+                except Exception as e:
+                    print(f"Error formatting date: {e}")
+                    order_date = "N/A"
+                    
+                status = order_info[5] if order_info[5] is not None else "N/A"
+                
+                # Handle numeric values with error protection
+                try:
+                    subtotal = float(order_info[2]) if order_info[2] is not None else 0
+                except (ValueError, TypeError):
+                    subtotal = 0
+                    
+                try:
+                    tax = float(order_info[3]) if order_info[3] is not None else 0
+                except (ValueError, TypeError):
+                    tax = 0
+                    
+                try:
+                    total = float(order_info[4]) if order_info[4] is not None else 0
+                except (ValueError, TypeError):
+                    total = 0
+                
+                # Display order info
+                ttk.Label(info_frame, text=f"Order ID: {order_id}").grid(row=0, column=0, sticky="w", padx=5, pady=2)
+                ttk.Label(info_frame, text=f"Date: {order_date}").grid(row=0, column=1, sticky="w", padx=5, pady=2)
+                ttk.Label(info_frame, text=f"Status: {status}").grid(row=1, column=0, sticky="w", padx=5, pady=2)
+                
+                ttk.Label(info_frame, text=f"Customer: {customer_name}").grid(row=2, column=0, sticky="w", padx=5, pady=2)
+                ttk.Label(info_frame, text=f"Email: {customer_email}").grid(row=2, column=1, sticky="w", padx=5, pady=2)
+                ttk.Label(info_frame, text=f"Address: {customer_address}").grid(row=3, column=0, columnspan=2, sticky="w", padx=5, pady=2)
+                
+                # Format money values with error protection
+                try:
+                    subtotal_str = f"${subtotal:.2f}"
+                except (ValueError, TypeError):
+                    subtotal_str = f"${float(subtotal):.2f}" if subtotal is not None else "$0.00"
+                    
+                try:
+                    tax_str = f"${tax:.2f}"
+                except (ValueError, TypeError):
+                    tax_str = f"${float(tax):.2f}" if tax is not None else "$0.00"
+                
+            try:
+                total_str = f"${total:.2f}"
+            except (ValueError, TypeError):
+                total_str = f"${float(total):.2f}" if total is not None else "$0.00"
             
-            # Display order info
-            ttk.Label(info_frame, text=f"Order ID: {order_id}").grid(row=0, column=0, sticky="w", padx=5, pady=2)
-            ttk.Label(info_frame, text=f"Date: {order_date}").grid(row=0, column=1, sticky="w", padx=5, pady=2)
-            ttk.Label(info_frame, text=f"Status: {status}").grid(row=1, column=0, sticky="w", padx=5, pady=2)
+            ttk.Label(info_frame, text=f"Subtotal: {subtotal_str}").grid(row=4, column=0, sticky="w", padx=5, pady=2)
+            ttk.Label(info_frame, text=f"Tax: {tax_str}").grid(row=4, column=1, sticky="w", padx=5, pady=2)
+            ttk.Label(info_frame, text=f"Total: {total_str}", font=("", 10, "bold")).grid(row=5, column=0, columnspan=2, sticky="w", padx=5, pady=2)
             
-            ttk.Label(info_frame, text=f"Customer: {customer_name}").grid(row=2, column=0, sticky="w", padx=5, pady=2)
-            ttk.Label(info_frame, text=f"Email: {customer_email}").grid(row=2, column=1, sticky="w", padx=5, pady=2)
-            ttk.Label(info_frame, text=f"Address: {customer_address}").grid(row=3, column=0, columnspan=2, sticky="w", padx=5, pady=2)
+            # Create items treeview
+            items_tree = ttk.Treeview(
+                items_frame,
+                columns=("ID", "Product", "Quantity", "Unit Price", "Subtotal"),
+                show="headings"
+            )
             
-            ttk.Label(info_frame, text=f"Subtotal: ${subtotal:.2f}").grid(row=4, column=0, sticky="w", padx=5, pady=2)
-            ttk.Label(info_frame, text=f"Tax: ${tax:.2f}").grid(row=4, column=1, sticky="w", padx=5, pady=2)
-            ttk.Label(info_frame, text=f"Total: ${total:.2f}", font=("", 10, "bold")).grid(row=5, column=0, columnspan=2, sticky="w", padx=5, pady=2)
+            items_tree.heading("ID", text="Item ID")
+            items_tree.heading("Product", text="Product")
+            items_tree.heading("Quantity", text="Qty")
+            items_tree.heading("Unit Price", text="Unit Price")
+            items_tree.heading("Subtotal", text="Subtotal")
+            
+            items_tree.column("ID", width=50)
+            items_tree.column("Product", width=200)
+            items_tree.column("Quantity", width=50)
+            items_tree.column("Unit Price", width=100)
+            items_tree.column("Subtotal", width=100)
+            
+            # Add scrollbar
+            items_scrollbar = ttk.Scrollbar(items_frame, orient=tk.VERTICAL, command=items_tree.yview)
+            items_tree.configure(yscrollcommand=items_scrollbar.set)
+            
+            # Pack
+            items_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            items_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            
+            # Insert items
+            for item in order_items:
+                item_id, product_name, quantity, unit_price, item_subtotal = item
+                items_tree.insert("", tk.END, values=(
+                    item_id,
+                    product_name,
+                    quantity,
+                    f"${unit_price:.2f}",
+                    f"${item_subtotal:.2f}"
+                ))
+                
+            # Addons section
+            addons_frame = ttk.LabelFrame(details_window, text="Item Add-ons")
+            addons_frame.pack(fill="x", expand=False, padx=10, pady=10)
+            
+            # Get addons for items
+            addon_info = {}
+            for item in order_items:
+                item_id = item[0]
+                self.cursor.execute("""
+                    SELECT oia.order_item_id, a.name, a.price
+                    FROM order_item_addons oia
+                    JOIN add_ons a ON oia.addon_id = a.addon_id
+                    WHERE oia.order_item_id = %s
+                """, (item_id,))
+                
+                addons = self.cursor.fetchall()
+                if addons:
+                    addon_info[item_id] = addons
+            
+            # If addons exist, display them
+            if addon_info:
+                for item_id, addons in addon_info.items():
+                    # Get item name
+                    for item in order_items:
+                        if item[0] == item_id:
+                            item_name = item[1]
+                            break
+                    else:
+                        item_name = f"Item #{item_id}"
+                    
+                    # Display addons
+                    ttk.Label(addons_frame, text=f"{item_name} Add-ons:", font=("", 9, "bold")).pack(anchor="w", padx=5, pady=2)
+                    
+                    for addon in addons:
+                        addon_name = addon[1]
+                        addon_price = addon[2]
+                        ttk.Label(addons_frame, text=f"• {addon_name} (+${addon_price:.2f})").pack(anchor="w", padx=20, pady=1)
+            else:
+                ttk.Label(addons_frame, text="No add-ons for this order").pack(padx=5, pady=5)
+            
+            # Buttons
+            buttons_frame = ttk.Frame(details_window)
+            buttons_frame.pack(fill="x", padx=10, pady=10)
+            
+            ttk.Button(buttons_frame, text="Close", command=details_window.destroy).pack(side=tk.RIGHT, padx=5)
+            
+            # Status update combobox
+            status_var = tk.StringVar(value=status)
+            ttk.Label(buttons_frame, text="Update Status:").pack(side=tk.LEFT, padx=5)
+            status_combo = ttk.Combobox(buttons_frame, textvariable=status_var, 
+                                      values=["pending", "completed", "delivered", "cancelled"])
+            status_combo.pack(side=tk.LEFT, padx=5)
+            
+            def update_status():
+                new_status = status_var.get()
+                try:
+                    self.cursor.execute("""
+                        UPDATE orders SET status = %s WHERE order_id = %s
+                    """, (new_status, order_id))
+                    self.conn.commit()
+                    messagebox.showinfo("Success", f"Order status updated to {new_status}")
+                    self.refresh_order_list()
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to update status: {str(e)}")
+            
+            ttk.Button(buttons_frame, text="Update", command=update_status).pack(side=tk.LEFT, padx=5)
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load order details: {str(e)}")
+
+                    
+                try:
+                    total_str = f"${total:.2f}"
+                except (ValueError, TypeError):
+                    total_str = f"${float(total):.2f}" if total is not None else "$0.00"
+                
+                ttk.Label(info_frame, text=f"Subtotal: {subtotal_str}").grid(row=4, column=0, sticky="w", padx=5, pady=2)
+                ttk.Label(info_frame, text=f"Tax: {tax_str}").grid(row=4, column=1, sticky="w", padx=5, pady=2)
+                ttk.Label(info_frame, text=f"Total: {total_str}", font=("", 10, "bold")).grid(row=5, column=0, columnspan=2, sticky="w", padx=5, pady=2)
+                
+            except Exception as info_error:
+                print(f"Error displaying order info: {info_error}")
+                ttk.Label(info_frame, text=f"Error displaying order information: {str(info_error)}", 
+                        foreground="red").grid(row=0, column=0, columnspan=2, sticky="w", padx=5, pady=2)
+            
+            # Create items treeview
+            items_tree_frame = ttk.Frame(items_frame)
+            items_tree_frame.pack(fill="both", expand=True, padx=5, pady=5)
+            
+            items_tree = ttk.Treeview(
+                items_tree_frame,
+                columns=("ID", "Product", "Quantity", "Unit Price", "Subtotal"),
+                show="headings"
+            )
+            
+            items_tree.heading("ID", text="Item ID")
+            items_tree.heading("Product", text="Product")
+            items_tree.heading("Quantity", text="Qty")
+            items_tree.heading("Unit Price", text="Unit Price")
+            items_tree.heading("Subtotal", text="Subtotal")
+            
+            items_tree.column("ID", width=50)
+            items_tree.column("Product", width=200)
+            items_tree.column("Quantity", width=50)
+            items_tree.column("Unit Price", width=100)
+            items_tree.column("Subtotal", width=100)
+            
+            # Add scrollbar
+            items_scrollbar = ttk.Scrollbar(items_tree_frame, orient=tk.VERTICAL, command=items_tree.yview)
+            items_tree.configure(yscrollcommand=items_scrollbar.set)
+            
+            # Pack
+            items_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            items_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            
+            # Insert items
+            for item in order_items:
+                try:
+                    item_id = item[0]
+                    product_name = item[1] if item[1] is not None else f"Unknown Product (ID: {item[5]})"
+                    quantity = item[2] if item[2] is not None else 0
+                    
+                    # Handle unit price formatting
+                    try:
+                        unit_price = float(item[3]) if item[3] is not None else 0
+                        unit_price_str = f"${unit_price:.2f}"
+                    except (ValueError, TypeError):
+                        unit_price_str = f"${float(item[3]):.2f}" if item[3] is not None else "$0.00"
+                    
+                    # Handle subtotal formatting
+                    try:
+                        item_subtotal = float(item[4]) if item[4] is not None else 0
+                        item_subtotal_str = f"${item_subtotal:.2f}"
+                    except (ValueError, TypeError):
+                        item_subtotal_str = f"${float(item[4]):.2f}" if item[4] is not None else "$0.00"
+                    
+                    items_tree.insert("", tk.END, values=(
+                        item_id,
+                        product_name,
+                        quantity,
+                        unit_price_str,
+                        item_subtotal_str
+                    ))
+                except Exception as item_error:
+                    print(f"Error displaying item: {item_error}")
+                    # Add a placeholder row for the error
+                    items_tree.insert("", tk.END, values=(
+                        "Error",
+                        f"Error displaying item: {str(item_error)}",
+                        "", "", ""
+                    ))
+                
+            # Addons section
+            addons_frame = ttk.LabelFrame(main_frame, text="Item Add-ons")
+            addons_frame.pack(fill="x", expand=False, padx=5, pady=5)
+            
+            # Get addons for items
+            addon_info = {}
+            for item in order_items:
+                try:
+                    item_id = item[0]
+                    self.cursor.execute("""
+                        SELECT oia.order_item_id, a.name, a.price
+                        FROM order_item_addons oia
+                        JOIN add_ons a ON oia.addon_id = a.addon_id
+                        WHERE oia.order_item_id = %s
+                    """, (item_id,))
+                    
+                    addons = self.cursor.fetchall()
+                    if addons:
+                        addon_info[item_id] = addons
+                except Exception as addon_query_error:
+                    print(f"Error querying add-ons for item {item_id}: {addon_query_error}")
+            
+            # If addons exist, display them
+            if addon_info:
+                addons_canvas = tk.Canvas(addons_frame, height=100)
+                addons_canvas.pack(fill="x", expand=False, padx=5, pady=5)
+                
+                addons_scrollframe = ttk.Frame(addons_canvas)
+                addons_scrollbar = ttk.Scrollbar(addons_frame, orient="vertical", command=addons_canvas.yview)
+                addons_canvas.configure(yscrollcommand=addons_scrollbar.set)
+                
+                addons_scrollbar.pack(side="right", fill="y")
+                addons_canvas.pack(side="left", fill="both", expand=True)
+                addons_canvas.create_window((0, 0), window=addons_scrollframe, anchor="nw", tags="addons_scrollframe")
+                
+                row = 0
+                for item_id, addons in addon_info.items():
+                    try:
+                        # Get item name
+                        for item in order_items:
+                            if item[0] == item_id:
+                                item_name = item[1]
+                                break
+                        else:
+                            item_name = f"Item #{item_id}"
+                        
+                        # Display addons
+                        ttk.Label(addons_scrollframe, text=f"{item_name} Add-ons:", font=("", 9, "bold")).grid(row=row, column=0, sticky="w", padx=5, pady=2)
+                        row += 1
+                        
+                        for addon in addons:
+                            addon_name = addon[1] if addon[1] is not None else "Unknown Add-on"
+                            
+                            # Safe addon price formatting
+                            try:
+                                addon_price = float(addon[2]) if addon[2] is not None else 0
+                                addon_price_str = f"${addon_price:.2f}"
+                            except (ValueError, TypeError):
+                                addon_price_str = f"${float(addon[2]):.2f}" if addon[2] is not None else "$0.00"
+                                
+                            ttk.Label(addons_scrollframe, text=f"• {addon_name} ({addon_price_str})").grid(row=row, column=0, sticky="w", padx=20, pady=1)
+                            row += 1
+                    except Exception as addon_display_error:
+                        print(f"Error displaying add-ons for item {item_id}: {addon_display_error}")
+                        ttk.Label(addons_scrollframe, text=f"Error displaying add-ons: {str(addon_display_error)}", foreground="red").grid(row=row, column=0, sticky="w", padx=5, pady=2)
+                        row += 1
+                
+                # Update the scrollregion when the frame changes size
+                def update_scrollregion(event):
+                    addons_canvas.configure(scrollregion=addons_canvas.bbox("all"))
+                
+                addons_scrollframe.bind("<Configure>", update_scrollregion)
+            else:
+                ttk.Label(addons_frame, text="No add-ons for this order").pack(padx=5, pady=5)
+            
+            # Buttons
+            buttons_frame = ttk.Frame(main_frame)
+            buttons_frame.pack(fill="x", padx=5, pady=10)
+            
+            ttk.Button(buttons_frame, text="Close", command=details_window.destroy).pack(side=tk.RIGHT, padx=5)
+            
+            # Status update combobox
+            status_var = tk.StringVar(value=status)
+            ttk.Label(buttons_frame, text="Update Status:").pack(side=tk.LEFT, padx=5)
+            status_combo = ttk.Combobox(buttons_frame, textvariable=status_var, 
+                                      values=["pending", "completed", "delivered", "cancelled"])
+            status_combo.pack(side=tk.LEFT, padx=5)
+            
+            def update_status():
+                new_status = status_var.get()
+                if not new_status:
+                    messagebox.showwarning("Warning", "Please select a status")
+                    return
+                    
+                try:
+                    if not self.ensure_connection():
+                        messagebox.showerror("Error", "Database connection lost")
+                        details_window.destroy()
+                        return
+                        
+                    self.cursor.execute("""
+                        UPDATE orders SET status = %s WHERE order_id = %s
+                    """, (new_status, order_id))
+                    self.conn.commit()
+                    
+                    self.update_status(f"Order #{order_id} status updated to {new_status}", "success")
+                    messagebox.showinfo("Success", f"Order status updated to {new_status}")
+                    self.refresh_order_list()
+                    
+                    # Update status label in the window too
+                    for widget in info_frame.grid_slaves():
+                        if int(widget.grid_info()["row"]) == 1 and int(widget.grid_info()["column"]) == 0:
+                            widget.config(text=f"Status: {new_status}")
+                            break
+                            
+                except Exception as e:
+                    self.update_status(f"Error updating status: {e}", "error")
+                    messagebox.showerror("Error", f"Failed to update status: {str(e)}")
+            
+            ttk.Button(buttons_frame, text="Update", command=update_status).pack(side=tk.LEFT, padx=5)
+            
+            # Update status
+            self.update_status(f"Viewing Order #{order_id}", "info")
+            
+        except Exception as e:
+            # Remove the loading indicator
+            loading_frame.destroy()
+            
+            error_msg = f"Failed to load order details: {str(e)}"
+            self.update_status(error_msg, "error")
+            
+            # Display error in the window
+            error_frame = ttk.Frame(details_window)
+            error_frame.pack(fill="both", expand=True, padx=20, pady=20)
+            
+            ttk.Label(error_frame, text="Error Loading Order Details", 
+                     font=("", 14, "bold"), foreground="red").pack(pady=(20, 10))
+            ttk.Label(error_frame, text=error_msg, wraplength=500).pack(pady=10)
+            ttk.Button(error_frame, text="Close", command=details_window.destroy).pack(pady=20)
+            
+            # Try to recover database connection
+            self.reset_transaction_state():.2f}" if tax is not None else "$0.00"
+                
+            try:
+                total_str = f"${total:.2f}"
+            except (ValueError, TypeError):
+                total_str = f"${float(total):.2f}" if total is not None else "$0.00"
+            
+            ttk.Label(info_frame, text=f"Subtotal: {subtotal_str}").grid(row=4, column=0, sticky="w", padx=5, pady=2)
+            ttk.Label(info_frame, text=f"Tax: {tax_str}").grid(row=4, column=1, sticky="w", padx=5, pady=2)
+            ttk.Label(info_frame, text=f"Total: {total_str}", font=("", 10, "bold")).grid(row=5, column=0, columnspan=2, sticky="w", padx=5, pady=2)
             
             # Create items treeview
             items_tree = ttk.Treeview(
@@ -569,8 +1111,9 @@ class PollosHermanosManagementSystem:
             return
             
         try:
-            # Begin transaction
-            self.conn.start_transaction()
+            # Check if there's a transaction already in progress
+            if not self.conn.in_transaction:
+                self.conn.start_transaction()
             
             # Delete add-ons first
             self.cursor.execute("""
@@ -786,11 +1329,43 @@ class PollosHermanosManagementSystem:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to export data: {str(e)}")
 
+    def reset_transaction_state(self):
+        """Attempt to reset the transaction state if there's an issue"""
+        try:
+            if hasattr(self, 'conn') and self.conn.is_connected():
+                try:
+                    # Try to roll back any pending transaction
+                    if self.conn.in_transaction:
+                        self.conn.rollback()
+                        print("Rolled back pending transaction")
+                except Exception as rollback_error:
+                    print(f"Error rolling back transaction: {rollback_error}")
+                    
+                try:
+                    # Close and reopen the connection to reset completely
+                    self.cursor.close()
+                    self.conn.close()
+                    print("Closed connection to reset state")
+                    return self.connect_to_database()
+                except Exception as close_error:
+                    print(f"Error closing connection: {close_error}")
+                    
+            # If we got here, try a complete reconnect
+            return self.connect_to_database()
+        except Exception as e:
+            print(f"Failed to reset transaction state: {e}")
+            return False
+            
     def __del__(self):
-        if hasattr(self, 'conn') and self.conn.is_connected():
-            self.cursor.close()
-            self.conn.close()
-            print("Database connection closed")
+        if hasattr(self, 'conn') and hasattr(self.conn, 'is_connected'):
+            try:
+                if self.conn.is_connected():
+                    self.cursor.close()
+                    self.conn.close()
+                    print("Database connection closed")
+            except Exception as e:
+                print(f"Error during cleanup: {e}")
+
 
 def main():
     root = tk.Tk()
