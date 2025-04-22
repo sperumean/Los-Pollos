@@ -855,7 +855,7 @@ class PollosHermanosManagementSystem:
             ttk.Button(error_frame, text="Close", command=details_window.destroy).pack(pady=20)
             
             # Try to recover database connection
-            self.reset_transaction_state():.2f}" if tax is not None else "$0.00"
+            self.reset_transaction_state()
                 
             try:
                 tax_str = f"${float(tax):.2f}"
