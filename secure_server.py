@@ -887,7 +887,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(response, cls=DecimalEncoder).encode())
 
 def run(server_class=HTTPServer, handler_class=RequestHandler, port=443):
-    server_address = ('', port)
+    server_address = ('0.0.0.0', port)
     httpd = server_class(server_address, handler_class)
     
     # Set up SSL context
