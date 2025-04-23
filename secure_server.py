@@ -941,10 +941,10 @@ class RedirectHandler(BaseHTTPRequestHandler):
 def find_mkcert_files():
     for file in os.listdir('.'):
             if file.startswith('lospolloshermanos.local') and file.endswith('.pem') and not file.endswith('-key.pem'):
-            cert_file = file
-            key_file = file.replace('.pem', '-key.pem')
-            if os.path.exists(key_file):
-                return cert_file, key_file
+                cert_file = file
+                key_file = file.replace('.pem', '-key.pem')
+                if os.path.exists(key_file):
+                    return cert_file, key_file
     return None, None
 
 def run(server_class=HTTPServer, handler_class=RequestHandler, port=443):
