@@ -940,7 +940,7 @@ class RedirectHandler(BaseHTTPRequestHandler):
 
 def find_mkcert_files():
     for file in os.listdir('.'):
-        if file.startswith('localhost') and file.endswith('.pem') and not file.endswith('-key.pem'):
+            if file.startswith('lospolloshermanos.local') and file.endswith('.pem') and not file.endswith('-key.pem'):
             cert_file = file
             key_file = file.replace('.pem', '-key.pem')
             if os.path.exists(key_file):
