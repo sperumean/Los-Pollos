@@ -1,6 +1,7 @@
 <?php
 // vulnerable_login.php - Simple SQL injection testing endpoint
 // WARNING: This file is intentionally vulnerable for educational purposes only!
+// Domain: lospolloshermanos.local
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
