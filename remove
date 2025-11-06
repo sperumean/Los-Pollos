@@ -1,0 +1,31 @@
+# Get VM's IP to determine student number
+$IP = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object {$_.IPAddress -like "10.0.20.*"}).IPAddress
+
+$VMMapping = @{
+    "10.0.20.20" = @{VM="VM103"; Student="CBU_STUDENT_103"}
+    "10.0.20.30" = @{VM="VM200"; Student="CBU_STUDENT_200"}
+    "10.0.20.40" = @{VM="VM201"; Student="CBU_STUDENT_201"}
+    "10.0.20.41" = @{VM="VM204"; Student="CBU_STUDENT_204"}
+}
+
+$VMName = $VMMapping[$IP].VM
+$StudentAccount = $VMMapping[$IP].Student
+
+Write-Host "Configuring $VMName with local user: $StudentAccount" -ForegroundColor Green
+
+# Enable RDP
+Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 0
+Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "SecurityLayer" -Value 0
+Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "MinEncryptionLevel" -Value 1
+Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+
+# Create local user
+$Password = ConvertTo-SecureString "L@ncerN@tion" -AsPlainText -Force
+New-LocalUser $StudentAccount -Password $Password -FullName $StudentAccount -Description "Lab User" -ErrorAction SilentlyContinue
+Add-LocalGroupMember -Group "Remote Desktop Users" -Member $StudentAccount -ErrorAction SilentlyContinue
+Add-LocalGroupMember -Group "Administrators" -Member $StudentAccount -ErrorAction SilentlyContinue
+
+Restart-Service TermService -Force
+
+Write-Host "✓ $VMName configured!" -ForegroundColor Green
