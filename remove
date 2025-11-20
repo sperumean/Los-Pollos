@@ -5,6 +5,10 @@ reg add "HKLM\SYSTEM\CurrentControlSet\Control\ComputerName\ComputerName" /v Com
 # Restart
 Restart-Computer -Force
 
+# Force remove from domain without contacting DC
+$credential = Get-Credential -Message "Enter local admin credentials"
+Remove-Computer -UnjoinDomainCredential $credential -WorkgroupName "WORKGROUP" -Force -Restart
+
 
 # Create student user
 sudo useradd -m -s /bin/bash CBU_STUDENT_202
