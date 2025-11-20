@@ -1,3 +1,11 @@
+# Change registry to workgroup
+reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v Domain /t REG_SZ /d "" /f
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\ComputerName\ComputerName" /v ComputerName /t REG_SZ /d "DESKTOP-J91LK26" /f
+
+# Restart
+Restart-Computer -Force
+
+
 # Create student user
 sudo useradd -m -s /bin/bash CBU_STUDENT_202
 echo "CBU_STUDENT_202:L@ncerN@tion" | sudo chpasswd
