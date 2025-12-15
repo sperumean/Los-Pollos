@@ -1,0 +1,14 @@
+mysql -u root -pW00fW00f#!? walter -e "
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL,
+    password VARCHAR(100) NOT NULL,
+    role VARCHAR(50) DEFAULT 'employee'
+);
+INSERT INTO users (username, password, role) VALUES 
+('gfring', 'PollosHermanos2024!', 'manager'),
+('mike', 'SecurityFirst99', 'security'),
+('walter', 'Chemistry101', 'consultant')
+ON DUPLICATE KEY UPDATE username=username;
+SELECT * FROM users;
+"
