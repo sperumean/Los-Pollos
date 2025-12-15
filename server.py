@@ -266,6 +266,52 @@ class RequestHandler(BaseHTTPRequestHandler):
             print(f"Error serving file {file_path}: {str(e)}")
             self.send_error(500, f"Internal server error: {str(e)}")
 
+
+    def handle_employee_login(self):
+        """INTENTIONALLY VULNERABLE - For SQL injection lab"""
+        content_length = int(self.headers.get('Content-Length', 0))
+        post_data = self.rfile.read(content_length)
+        login_data = json.loads(post_data.decode('utf-8'))
+        
+        username = login_data.get('username', '')
+        password = login_data.get('password', '')
+        
+        try:
+            db = DatabaseConnection()
+            conn = db.connect()
+            cursor = conn.cursor(dictionary=True)
+            
+            # VULNERABLE: Direct string concatenation - NO SANITIZATION
+            query = f"SELECT * FROM users WHERE username='{username}' AND password='{password}'"
+            print(f"[VULN] Executing: {query}")
+            
+            cursor.execute(query)
+            results = cursor.fetchall()
+            
+            if results:
+                response = {
+                    'success': True,
+                    'user': results[0].get('username', 'Admin'),
+                    'flag': 'FLAG{SQL_1NJ3CT10N_M4ST3R_2024}',
+                    'message': 'Login successful'
+                }
+            else:
+                response = {
+                    'success': False,
+                    'message': 'Invalid username or password'
+                }
+            
+            cursor.close()
+            conn.close()
+            
+        except Exception as e:
+            response = {
+                'success': False,
+                'message': f'Database error: {str(e)}'
+            }
+        
+        self.wfile.write(json.dumps(response).encode())
+
     def do_OPTIONS(self):
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
@@ -351,6 +397,8 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.handle_cart_update()
         elif self.path == '/api/cart/checkout':
             self.handle_cart_checkout()
+        elif self.path == '/api/employee-login':
+            self.handle_employee_login()    
         else:
             self.send_error(404)
 
