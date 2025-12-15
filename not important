@@ -1,5 +1,1 @@
-# Change this line:
-query = f"SELECT * FROM users WHERE username='{username}' AND password='{password}'"
-
-# To this:
-query = f"SELECT * FROM users WHERE username='{username}' AND password_hash='{password}'"
+type C:\Users\Admin\Los-Pollos\secure_server.py | findstr "handle_employee_login"
