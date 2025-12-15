@@ -341,7 +341,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Content-Type', 'application/json; charset=utf-8')
         self.end_headers()
-
+    
         if self.path == '/api/contact':
             self.handle_contact_form()
         elif self.path == '/api/cart/add':
@@ -352,6 +352,8 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.handle_cart_update()
         elif self.path == '/api/cart/checkout':
             self.handle_cart_checkout()
+        elif self.path == '/api/employee-login':       
+            self.handle_employee_login()                   
         else:
             self.send_error(404)
 
@@ -885,6 +887,51 @@ class RequestHandler(BaseHTTPRequestHandler):
                 print("Database connection closed")
                 
         self.wfile.write(json.dumps(response, cls=DecimalEncoder).encode())
+    def handle_employee_login(self):
+        """INTENTIONALLY VULNERABLE - For SQL injection lab"""
+        content_length = int(self.headers.get('Content-Length', 0))
+        post_data = self.rfile.read(content_length)
+        login_data = json.loads(post_data.decode('utf-8'))
+        
+        username = login_data.get('username', '')
+        password = login_data.get('password', '')
+        
+        try:
+            db = DatabaseConnection()
+            conn = db.connect()
+            cursor = conn.cursor(dictionary=True)
+            
+            # VULNERABLE: Direct string concatenation - NO SANITIZATION
+            query = f"SELECT * FROM users WHERE username='{username}' AND password='{password}'"
+            print(f"[VULN] Executing: {query}")
+            
+            cursor.execute(query)
+            results = cursor.fetchall()
+            
+            if results:
+                response = {
+                    'success': True,
+                    'user': results[0].get('username', 'Admin'),
+                    'flag': 'FLAG{SQL_1NJ3CT10N_M4ST3R_2024}',
+                    'message': 'Login successful'
+                }
+            else:
+                response = {
+                    'success': False,
+                    'message': 'Invalid username or password'
+                }
+            
+            cursor.close()
+            conn.close()
+            
+        except Exception as e:
+            print(f"[VULN] Error: {str(e)}")
+            response = {
+                'success': False,
+                'message': f'Database error: {str(e)}'
+            }
+        
+        self.wfile.write(json.dumps(response).encode())
 
 def run(server_class=HTTPServer, handler_class=RequestHandler, port=443):
     server_address = ('0.0.0.0', port)
